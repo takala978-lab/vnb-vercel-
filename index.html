@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     body { overscroll-behavior: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -19,17 +20,10 @@
     const { useState, useEffect } = React;
 
     const initialProducts = [
-      { id: 1, name: 'בורג 35*2.5', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 13, costPerBox: 6.5, minStock: 10 },
-      { id: 2, name: 'בורג 35*3.5', boxesPerCarton: 16, screwsPerBox: 1000, pricePerBox: 19, costPerBox: 9.5, minStock: 10 },
-      { id: 3, name: 'בורג פחפח 4.2*13', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 17, costPerBox: 8.5, minStock: 10 },
-      { id: 4, name: 'בורג 4.8*3.5', boxesPerCarton: 16, screwsPerBox: 500, pricePerBox: 18, costPerBox: 9, minStock: 10 },
-    ];
-
-    const initialInventory = [
-      { productId: 1, cartons: 68 },
-      { productId: 2, cartons: 26 },
-      { productId: 3, cartons: 42 },
-      { productId: 4, cartons: 72 },
+      { id: 1, name: 'בורג 35*2.5', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 13, costPerBox: 6.5, minStock: 10, initialStock: 68, notes: '' },
+      { id: 2, name: 'בורג 35*3.5', boxesPerCarton: 16, screwsPerBox: 1000, pricePerBox: 19, costPerBox: 9.5, minStock: 10, initialStock: 26, notes: '' },
+      { id: 3, name: 'בורג פחפח 4.2*13', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 17, costPerBox: 8.5, minStock: 10, initialStock: 42, notes: '' },
+      { id: 4, name: 'בורג 4.8*3.5', boxesPerCarton: 16, screwsPerBox: 500, pricePerBox: 18, costPerBox: 9, minStock: 10, initialStock: 72, notes: '' },
     ];
 
     const initialCustomers = [
@@ -39,57 +33,160 @@
     ];
 
     const initialSales = [
-      { id: 1, date: '2024-12-27', customerId: 1, products: { 1: 2, 2: 2, 3: 1, 4: 1 }, paymentStatus: 'שולם', notes: '', invoiceNumber: 'INV-001', payments: [{ date: '2024-12-27', amount: 1732, method: 'מזומן', reference: '' }] },
-      { id: 2, date: '2025-01-07', customerId: 3, products: { 1: 0, 2: 2, 3: 0, 4: 36 }, paymentStatus: 'שולם', notes: '', invoiceNumber: 'INV-002', payments: [{ date: '2025-01-07', amount: 12951, method: 'מזומן', reference: '' }] },
+      { id: 1, date: '2024-12-27', customerId: 1, items: [{productId: 1, cartons: 2, pricePerBox: 13}, {productId: 2, cartons: 2, pricePerBox: 19}, {productId: 3, cartons: 1, pricePerBox: 17}, {productId: 4, cartons: 1, pricePerBox: 18}], paymentStatus: 'שולם', paymentDueDate: '2024-12-27', notes: '', invoiceNumber: 'INV-001', payments: [{ date: '2024-12-27', amount: 1732, method: 'מזומן', reference: '' }] },
+      { id: 2, date: '2025-01-07', customerId: 3, items: [{productId: 2, cartons: 2, pricePerBox: 19}, {productId: 4, cartons: 36, pricePerBox: 18}], paymentStatus: 'שולם', paymentDueDate: '2025-01-07', notes: '', invoiceNumber: 'INV-002', payments: [{ date: '2025-01-07', amount: 12951, method: 'מזומן', reference: '' }] },
     ];
 
     const initialLeads = [
-      { id: 1, name: 'גת גבס', status: 'חדש', phone: '', contact: '', notes: '', source: 'המלצה', nextFollowUp: '' },
+      { id: 1, name: 'גת גבס', status: 'חדש', phone: '', contact: '', notes: '', source: 'המלצה', nextFollowUp: '2025-01-20' },
       { id: 2, name: 'ארז חומרי בניין', status: 'הצעת מחיר', phone: '', contact: '', notes: '', source: 'שטח', nextFollowUp: '2025-01-18' },
     ];
 
     const initialImports = [
-      { id: 1, date: '2024-11-15', supplier: 'Ningbo Fasteners', items: [{ productId: 1, cartons: 100 }], productCost: 15000, shipping: 2500, customs: 1800, insurance: 400, status: 'הגיע', notes: '' },
+      { id: 1, date: '2024-11-15', supplier: 'Ningbo Fasteners', items: [{ productId: 1, cartons: 100 }], productCost: 15000, shipping: 2500, customs: 1800, insurance: 400, status: 'הגיע', expectedDate: '2024-12-01', notes: '' },
+    ];
+
+    const initialExpenses = [
+      { id: 1, date: '2025-01-10', category: 'דלק', amount: 500, description: 'דלק לחודש ינואר', notes: '' },
     ];
 
     const VAT = 0.18;
     const load = (k, d) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch { return d; } };
     const save = (k, d) => { try { localStorage.setItem(k, JSON.stringify(d)); } catch {} };
     const fmt = n => '₪' + (n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const getWeekDates = () => {
+      const now = new Date();
+      const day = now.getDay();
+      const start = new Date(now); start.setDate(now.getDate() - day);
+      const end = new Date(start); end.setDate(start.getDate() + 6);
+      return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    };
 
     function App() {
       const [tab, setTab] = useState('dashboard');
-      const [products, setProducts] = useState(() => load('vnbP', initialProducts));
-      const [inventory, setInventory] = useState(() => load('vnbI', initialInventory));
-      const [sales, setSales] = useState(() => load('vnbS', initialSales));
-      const [customers, setCustomers] = useState(() => load('vnbC', initialCustomers));
-      const [leads, setLeads] = useState(() => load('vnbL', initialLeads));
-      const [imports, setImports] = useState(() => load('vnbIm', initialImports));
-      const [targets, setTargets] = useState(() => load('vnbT', { monthly: 50000 }));
+      const [products, setProducts] = useState(() => load('vnbP2', initialProducts));
+      const [sales, setSales] = useState(() => load('vnbS2', initialSales));
+      const [customers, setCustomers] = useState(() => load('vnbC2', initialCustomers));
+      const [leads, setLeads] = useState(() => load('vnbL2', initialLeads));
+      const [imports, setImports] = useState(() => load('vnbIm2', initialImports));
+      const [expenses, setExpenses] = useState(() => load('vnbEx2', initialExpenses));
+      const [targets, setTargets] = useState(() => load('vnbT2', { monthly: 50000 }));
       const [modal, setModal] = useState(null);
       const [editing, setEditing] = useState(null);
+      const [viewCustomer, setViewCustomer] = useState(null);
 
-      useEffect(() => { save('vnbP', products); }, [products]);
-      useEffect(() => { save('vnbI', inventory); }, [inventory]);
-      useEffect(() => { save('vnbS', sales); }, [sales]);
-      useEffect(() => { save('vnbC', customers); }, [customers]);
-      useEffect(() => { save('vnbL', leads); }, [leads]);
-      useEffect(() => { save('vnbIm', imports); }, [imports]);
-      useEffect(() => { save('vnbT', targets); }, [targets]);
+      useEffect(() => { save('vnbP2', products); }, [products]);
+      useEffect(() => { save('vnbS2', sales); }, [sales]);
+      useEffect(() => { save('vnbC2', customers); }, [customers]);
+      useEffect(() => { save('vnbL2', leads); }, [leads]);
+      useEffect(() => { save('vnbIm2', imports); }, [imports]);
+      useEffect(() => { save('vnbEx2', expenses); }, [expenses]);
+      useEffect(() => { save('vnbT2', targets); }, [targets]);
 
-      const calcTotal = (s, vat = true) => {
-        const base = products.reduce((sum, p) => sum + ((s.products?.[p.id] || 0) * p.boxesPerCarton * p.pricePerBox), 0);
-        return vat ? base * (1 + VAT) : base;
+      // Calculate sale total
+      const calcSaleTotal = (sale, withVat = true) => {
+        const base = (sale.items || []).reduce((sum, item) => {
+          const p = products.find(x => x.id === item.productId);
+          return sum + (item.cartons * (p?.boxesPerCarton || 0) * (item.pricePerBox || p?.pricePerBox || 0));
+        }, 0);
+        return withVat ? base * (1 + VAT) : base;
       };
 
-      const invBalance = products.map(p => {
-        const init = inventory.find(i => i.productId === p.id)?.cartons || 0;
-        const sold = sales.reduce((sum, s) => sum + (s.products?.[p.id] || 0), 0);
-        return { ...p, init, sold, remain: init - sold };
+      // Inventory calculations
+      const getInventory = () => products.map(p => {
+        const initial = p.initialStock || 0;
+        const sold = sales.reduce((sum, s) => sum + ((s.items || []).find(i => i.productId === p.id)?.cartons || 0), 0);
+        const incoming = imports.filter(i => i.status !== 'הגיע').reduce((sum, i) => sum + ((i.items || []).find(x => x.productId === p.id)?.cartons || 0), 0);
+        const arrived = imports.filter(i => i.status === 'הגיע').reduce((sum, i) => sum + ((i.items || []).find(x => x.productId === p.id)?.cartons || 0), 0);
+        const current = initial + arrived - sold;
+        const future = current + incoming;
+        return { ...p, initial, sold, current, incoming, future, isLow: current <= p.minStock };
       });
 
-      const totalSales = sales.reduce((s, x) => s + calcTotal(x), 0);
-      const pending = sales.filter(s => s.paymentStatus !== 'שולם').reduce((sum, s) => sum + calcTotal(s), 0);
+      const inventory = getInventory();
+      const lowStock = inventory.filter(p => p.isLow);
+      const totalSales = sales.reduce((s, x) => s + calcSaleTotal(x), 0);
+      const totalExpenses = expenses.reduce((s, x) => s + x.amount, 0);
+      
+      // Week calculations
+      const week = getWeekDates();
+      const weekLeads = leads.filter(l => l.nextFollowUp >= week.start && l.nextFollowUp <= week.end);
+      const weekPayments = sales.filter(s => s.paymentStatus !== 'שולם' && s.paymentDueDate >= week.start && s.paymentDueDate <= week.end);
+      const weekPaymentsTotal = weekPayments.reduce((sum, s) => {
+        const total = calcSaleTotal(s);
+        const paid = (s.payments || []).reduce((p, x) => p + x.amount, 0);
+        return sum + (total - paid);
+      }, 0);
+
+      // Export to Excel
+      const exportToExcel = (type) => {
+        let data = [];
+        let filename = '';
+        
+        if (type === 'sales') {
+          filename = 'מכירות.xlsx';
+          data = sales.map(s => {
+            const c = customers.find(x => x.id === s.customerId);
+            const total = calcSaleTotal(s);
+            const paid = (s.payments || []).reduce((p, x) => p + x.amount, 0);
+            return {
+              'תאריך': s.date,
+              'מספר חשבונית': s.invoiceNumber,
+              'לקוח': c?.name || '',
+              'סכום': Math.round(total),
+              'שולם': Math.round(paid),
+              'יתרה': Math.round(total - paid),
+              'סטטוס': s.paymentStatus,
+              'הערות': s.notes
+            };
+          });
+        } else if (type === 'products') {
+          filename = 'מכירות_לפי_מוצר.xlsx';
+          data = products.map(p => {
+            const soldCartons = sales.reduce((sum, s) => sum + ((s.items || []).find(i => i.productId === p.id)?.cartons || 0), 0);
+            const revenue = sales.reduce((sum, s) => {
+              const item = (s.items || []).find(i => i.productId === p.id);
+              if (!item) return sum;
+              return sum + (item.cartons * p.boxesPerCarton * (item.pricePerBox || p.pricePerBox) * 1.18);
+            }, 0);
+            const cost = soldCartons * p.boxesPerCarton * p.costPerBox;
+            return {
+              'מוצר': p.name,
+              'קרטונים שנמכרו': soldCartons,
+              'הכנסות': Math.round(revenue),
+              'עלות': Math.round(cost),
+              'רווח': Math.round(revenue - cost),
+              'אחוז רווח': cost > 0 ? Math.round(((revenue - cost) / cost) * 100) + '%' : '0%'
+            };
+          });
+        } else if (type === 'inventory') {
+          filename = 'מלאי.xlsx';
+          data = inventory.map(p => ({
+            'מוצר': p.name,
+            'מלאי התחלתי': p.initial,
+            'נמכר': p.sold,
+            'מלאי נוכחי': p.current,
+            'בדרך': p.incoming,
+            'מלאי עתידי': p.future,
+            'מינימום': p.minStock,
+            'מצב': p.isLow ? 'נמוך!' : 'תקין'
+          }));
+        } else if (type === 'expenses') {
+          filename = 'הוצאות.xlsx';
+          data = expenses.map(e => ({
+            'תאריך': e.date,
+            'קטגוריה': e.category,
+            'סכום': e.amount,
+            'תיאור': e.description,
+            'הערות': e.notes
+          }));
+        }
+        
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'נתונים');
+        XLSX.writeFile(wb, filename);
+      };
 
       const Modal = ({ children, title, onClose }) => (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -103,56 +200,55 @@
         </div>
       );
 
+      // EDIT PRODUCT
       const EditProduct = () => {
-        const [f, setF] = useState(editing || { name: '', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 0, costPerBox: 0, minStock: 10 });
-        const inv = inventory.find(i => i.productId === editing?.id) || { cartons: 0 };
-        const [cart, setCart] = useState(inv.cartons);
+        const [f, setF] = useState(editing || { name: '', boxesPerCarton: 20, screwsPerBox: 1000, pricePerBox: 0, costPerBox: 0, minStock: 10, initialStock: 0, notes: '' });
         const submit = () => {
-          if (editing) {
+          if (editing?.id) {
             setProducts(products.map(p => p.id === editing.id ? { ...f, id: editing.id } : p));
-            setInventory(inventory.map(i => i.productId === editing.id ? { ...i, cartons: cart } : i));
           } else {
             const id = Math.max(0, ...products.map(p => p.id)) + 1;
             setProducts([...products, { ...f, id }]);
-            setInventory([...inventory, { productId: id, cartons: cart }]);
           }
           setModal(null);
         };
         const del = () => { if (window.confirm('למחוק?')) { setProducts(products.filter(p => p.id !== editing.id)); setModal(null); } };
         return (
-          <Modal title={editing ? 'עריכת מוצר' : 'מוצר חדש'} onClose={() => setModal(null)}>
+          <Modal title={editing?.id ? 'עריכת מוצר' : 'מוצר חדש'} onClose={() => setModal(null)}>
             <div className="space-y-3">
               <input placeholder="שם המוצר" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
               <div className="grid grid-cols-2 gap-2">
-                <input type="number" placeholder="קופסאות/קרטון" value={f.boxesPerCarton} onChange={e => setF({ ...f, boxesPerCarton: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" placeholder="ברגים/קופסא" value={f.screwsPerBox} onChange={e => setF({ ...f, screwsPerBox: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
+                <div><label className="text-slate-400 text-xs">קופסאות/קרטון</label><input type="number" value={f.boxesPerCarton} onChange={e => setF({ ...f, boxesPerCarton: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">יחידות/קופסא</label><input type="number" value={f.screwsPerBox} onChange={e => setF({ ...f, screwsPerBox: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input type="number" step="0.5" placeholder="מחיר מכירה" value={f.pricePerBox} onChange={e => setF({ ...f, pricePerBox: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" step="0.5" placeholder="עלות" value={f.costPerBox} onChange={e => setF({ ...f, costPerBox: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
+                <div><label className="text-slate-400 text-xs">מחיר מכירה/קופסא</label><input type="number" step="0.5" value={f.pricePerBox} onChange={e => setF({ ...f, pricePerBox: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">עלות/קופסא</label><input type="number" step="0.5" value={f.costPerBox} onChange={e => setF({ ...f, costPerBox: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input type="number" placeholder="התראת מלאי" value={f.minStock} onChange={e => setF({ ...f, minStock: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" placeholder="קרטונים במלאי" value={cart} onChange={e => setCart(+e.target.value || 0)} className="bg-slate-700 text-white rounded-lg p-3" />
+                <div><label className="text-slate-400 text-xs">מלאי התחלתי (קרטונים)</label><input type="number" value={f.initialStock} onChange={e => setF({ ...f, initialStock: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">התראת מלאי מינימום</label><input type="number" value={f.minStock} onChange={e => setF({ ...f, minStock: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
               </div>
               {f.pricePerBox > 0 && f.costPerBox > 0 && <div className="bg-emerald-500/20 p-2 rounded text-center text-emerald-400">רווח: {(((f.pricePerBox - f.costPerBox) / f.costPerBox) * 100).toFixed(0)}%</div>}
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
               <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
-              {editing && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
+              {editing?.id && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
             </div>
           </Modal>
         );
       };
 
+      // EDIT CUSTOMER
       const EditCustomer = () => {
         const [f, setF] = useState(editing || { name: '', phone: '', address: '', contactPerson: '', paymentTerms: 'מזומן', rating: 3, notes: '', region: 'מרכז' });
         const submit = () => {
-          if (editing) setCustomers(customers.map(c => c.id === editing.id ? { ...f, id: editing.id } : c));
+          if (editing?.id) setCustomers(customers.map(c => c.id === editing.id ? { ...f, id: editing.id } : c));
           else setCustomers([...customers, { ...f, id: Math.max(0, ...customers.map(c => c.id)) + 1 }]);
           setModal(null);
         };
         const del = () => { if (window.confirm('למחוק?')) { setCustomers(customers.filter(c => c.id !== editing.id)); setModal(null); } };
         return (
-          <Modal title={editing ? 'עריכת לקוח' : 'לקוח חדש'} onClose={() => setModal(null)}>
+          <Modal title={editing?.id ? 'עריכת לקוח' : 'לקוח חדש'} onClose={() => setModal(null)}>
             <div className="space-y-3">
               <input placeholder="שם העסק" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
               <input placeholder="טלפון" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
@@ -167,20 +263,21 @@
                 </select>
               </div>
               <div><span className="text-slate-300 text-sm">דירוג:</span>
-                <div className="flex gap-1 mt-1">{[1,2,3,4,5].map(n => <button key={n} onClick={() => setF({ ...f, rating: n })} className={`text-2xl ${n <= f.rating ? 'text-amber-400' : 'text-slate-600'}`}>⭐</button>)}</div>
+                <div className="flex gap-1 mt-1">{[1,2,3,4,5].map(n => <button key={n} onClick={() => setF({ ...f, rating: n })} className={`text-2xl ${n <= f.rating ? 'text-amber-400' : 'text-slate-600'}`}>★</button>)}</div>
               </div>
-              <textarea placeholder="הערות" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
               <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
-              {editing && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
+              {editing?.id && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
             </div>
           </Modal>
         );
       };
 
+      // EDIT LEAD
       const EditLead = () => {
         const [f, setF] = useState(editing || { name: '', status: 'חדש', phone: '', contact: '', notes: '', source: 'שטח', nextFollowUp: '' });
         const submit = () => {
-          if (editing) setLeads(leads.map(l => l.id === editing.id ? { ...f, id: editing.id } : l));
+          if (editing?.id) setLeads(leads.map(l => l.id === editing.id ? { ...f, id: editing.id } : l));
           else setLeads([...leads, { ...f, id: Math.max(0, ...leads.map(l => l.id)) + 1 }]);
           setModal(null);
         };
@@ -191,7 +288,7 @@
           setModal(null);
         };
         return (
-          <Modal title={editing ? 'עריכת ליד' : 'ליד חדש'} onClose={() => setModal(null)}>
+          <Modal title={editing?.id ? 'עריכת ליד' : 'ליד חדש'} onClose={() => setModal(null)}>
             <div className="space-y-3">
               <input placeholder="שם העסק" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
               <input placeholder="איש קשר" value={f.contact} onChange={e => setF({ ...f, contact: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
@@ -204,25 +301,38 @@
                   <option>שטח</option><option>המלצה</option><option>אינטרנט</option><option>אחר</option>
                 </select>
               </div>
-              <div><span className="text-slate-300 text-sm">פולואפ:</span>
-                <input type="date" value={f.nextFollowUp} onChange={e => setF({ ...f, nextFollowUp: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3 mt-1" />
+              <div><label className="text-slate-400 text-xs">תאריך פולואפ</label>
+                <input type="date" value={f.nextFollowUp} onChange={e => setF({ ...f, nextFollowUp: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
               </div>
-              <textarea placeholder="הערות" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
               <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
-              {editing && <><button onClick={toCustomer} className="w-full bg-emerald-500 text-white py-2 rounded-lg">🎉 הפוך ללקוח</button>
+              {editing?.id && <><button onClick={toCustomer} className="w-full bg-emerald-500 text-white py-2 rounded-lg">🎉 הפוך ללקוח</button>
               <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button></>}
             </div>
           </Modal>
         );
       };
 
+      // EDIT SALE
       const EditSale = () => {
-        const isNew = !editing;
-        const [f, setF] = useState(editing || { date: new Date().toISOString().split('T')[0], customerId: '', products: {}, paymentStatus: 'ממתין', notes: '', payments: [] });
+        const isNew = !editing?.id;
+        const defaultItems = products.map(p => ({ productId: p.id, cartons: 0, pricePerBox: p.pricePerBox }));
+        const [f, setF] = useState(editing || { date: new Date().toISOString().split('T')[0], customerId: '', items: defaultItems, paymentStatus: 'ממתין', paymentDueDate: '', notes: '', payments: [] });
         const [pay, setPay] = useState({ date: new Date().toISOString().split('T')[0], amount: 0, method: 'מזומן', reference: '' });
-        const total = products.reduce((s, p) => s + ((f.products?.[p.id] || 0) * p.boxesPerCarton * p.pricePerBox * 1.18), 0);
+        
+        const items = f.items || defaultItems;
+        const total = items.reduce((s, item) => {
+          const p = products.find(x => x.id === item.productId);
+          return s + (item.cartons * (p?.boxesPerCarton || 0) * (item.pricePerBox || p?.pricePerBox || 0) * 1.18);
+        }, 0);
         const paid = (f.payments || []).reduce((s, p) => s + p.amount, 0);
         const remain = total - paid;
+
+        const updateItem = (productId, field, value) => {
+          const newItems = items.map(i => i.productId === productId ? { ...i, [field]: value } : i);
+          setF({ ...f, items: newItems });
+        };
+
         const addPay = () => {
           if (pay.amount <= 0) return;
           const pays = [...(f.payments || []), { ...pay }];
@@ -237,39 +347,60 @@
         };
         const submit = () => {
           if (!f.customerId) return alert('בחר לקוח');
-          if (isNew) setSales([...sales, { ...f, id: Math.max(0, ...sales.map(s => s.id)) + 1, customerId: +f.customerId, invoiceNumber: `INV-${String(sales.length + 1).padStart(3, '0')}` }]);
-          else setSales(sales.map(s => s.id === editing.id ? { ...f, id: editing.id } : s));
+          const saleItems = items.filter(i => i.cartons > 0);
+          if (saleItems.length === 0) return alert('הוסף מוצרים');
+          if (isNew) setSales([...sales, { ...f, items: saleItems, id: Math.max(0, ...sales.map(s => s.id)) + 1, customerId: +f.customerId, invoiceNumber: `INV-${String(sales.length + 1).padStart(3, '0')}` }]);
+          else setSales(sales.map(s => s.id === editing.id ? { ...f, items: saleItems, id: editing.id } : s));
           setModal(null);
         };
         const del = () => { if (window.confirm('למחוק?')) { setSales(sales.filter(s => s.id !== editing.id)); setModal(null); } };
+
         return (
           <Modal title={isNew ? 'מכירה חדשה' : 'עריכת מכירה'} onClose={() => setModal(null)}>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <select value={f.customerId} onChange={e => setF({ ...f, customerId: e.target.value })} className="bg-slate-700 text-white rounded-lg p-3">
-                  <option value="">בחר לקוח</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div><label className="text-slate-400 text-xs">תאריך</label>
+                  <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">לקוח</label>
+                  <select value={f.customerId} onChange={e => setF({ ...f, customerId: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3">
+                    <option value="">בחר לקוח</option>
+                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select></div>
               </div>
-              <div className="text-slate-300 text-sm">קרטונים:</div>
-              {products.map(p => (
-                <div key={p.id} className="flex justify-between items-center bg-slate-700/50 p-2 rounded">
-                  <span className="text-white text-sm">{p.name}</span>
-                  <input type="number" min="0" value={f.products?.[p.id] || 0} onChange={e => setF({ ...f, products: { ...f.products, [p.id]: +e.target.value || 0 } })} className="w-16 bg-slate-600 text-white rounded p-2 text-center" />
-                </div>
-              ))}
+              <div><label className="text-slate-400 text-xs">תאריך תשלום צפוי</label>
+                <input type="date" value={f.paymentDueDate || ''} onChange={e => setF({ ...f, paymentDueDate: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+              
+              <div className="text-slate-300 text-sm font-bold">מוצרים:</div>
+              {products.map(p => {
+                const item = items.find(i => i.productId === p.id) || { cartons: 0, pricePerBox: p.pricePerBox };
+                return (
+                  <div key={p.id} className="bg-slate-700/50 p-2 rounded space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white text-sm">{p.name}</span>
+                      <input type="number" min="0" placeholder="קרטונים" value={item.cartons || ''} onChange={e => updateItem(p.id, 'cartons', +e.target.value || 0)} className="w-20 bg-slate-600 text-white rounded p-2 text-center text-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 text-xs">מחיר/קופסא:</span>
+                      <input type="number" step="0.5" value={item.pricePerBox || p.pricePerBox} onChange={e => updateItem(p.id, 'pricePerBox', +e.target.value || 0)} className="w-20 bg-slate-600 text-white rounded p-1 text-center text-xs" />
+                      <span className="text-slate-400 text-xs">(ברירת מחדל: ₪{p.pricePerBox})</span>
+                    </div>
+                  </div>
+                );
+              })}
+              
               <div className="bg-amber-500/20 p-3 rounded-lg text-sm">
                 <div className="flex justify-between"><span className="text-slate-300">סה"כ:</span><span className="text-amber-400 font-bold">{fmt(total)}</span></div>
                 <div className="flex justify-between"><span className="text-emerald-400">שולם:</span><span className="text-emerald-400">{fmt(paid)}</span></div>
                 <div className="flex justify-between"><span className="text-red-400">יתרה:</span><span className="text-red-400 font-bold">{fmt(remain)}</span></div>
               </div>
+              
               {f.payments?.length > 0 && <div className="space-y-1">{f.payments.map((p, i) => (
                 <div key={i} className="flex justify-between items-center bg-slate-700/30 p-2 rounded text-sm">
                   <span className="text-white">{fmt(p.amount)} • {p.method} • {p.date}</span>
                   <button onClick={() => delPay(i)} className="text-red-400">❌</button>
                 </div>
               ))}</div>}
+              
               {remain > 0 && <div className="bg-slate-700/30 p-3 rounded space-y-2">
                 <div className="text-slate-300 text-sm font-bold">הוסף תשלום</div>
                 <div className="grid grid-cols-2 gap-2">
@@ -285,7 +416,8 @@
                 <button onClick={addPay} className="w-full bg-emerald-500 text-white py-2 rounded font-bold text-sm">+ הוסף תשלום</button>
                 <button onClick={() => setPay({ ...pay, amount: Math.round(remain) })} className="text-amber-400 text-xs">מלא יתרה ({fmt(remain)})</button>
               </div>}
-              <textarea placeholder="הערות" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
+              
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
               <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
               {!isNew && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
             </div>
@@ -293,42 +425,64 @@
         );
       };
 
+      // EDIT IMPORT
       const EditImport = () => {
-        const isNew = !editing;
-        const [f, setF] = useState(editing || { date: new Date().toISOString().split('T')[0], supplier: '', items: products.map(p => ({ productId: p.id, cartons: 0 })), productCost: 0, shipping: 0, customs: 0, insurance: 0, status: 'בדרך', notes: '' });
+        const isNew = !editing?.id;
+        const defaultItems = products.map(p => ({ productId: p.id, cartons: 0 }));
+        const [f, setF] = useState(editing || { date: new Date().toISOString().split('T')[0], supplier: '', items: defaultItems, productCost: 0, shipping: 0, customs: 0, insurance: 0, status: 'בדרך', expectedDate: '', notes: '' });
+        const items = f.items || defaultItems;
+        
+        const updateItem = (productId, cartons) => {
+          const newItems = items.map(i => i.productId === productId ? { ...i, cartons } : i);
+          if (!newItems.find(i => i.productId === productId)) newItems.push({ productId, cartons });
+          setF({ ...f, items: newItems });
+        };
+
         const submit = () => {
+          const importItems = items.filter(i => i.cartons > 0);
           if (isNew) {
-            setImports([...imports, { ...f, id: Math.max(0, ...imports.map(i => i.id)) + 1 }]);
-            if (f.status === 'הגיע') f.items.forEach(it => { if (it.cartons > 0) setInventory(inv => inv.map(i => i.productId === it.productId ? { ...i, cartons: i.cartons + it.cartons } : i)); });
-          } else setImports(imports.map(i => i.id === editing.id ? { ...f, id: editing.id } : i));
+            setImports([...imports, { ...f, items: importItems, id: Math.max(0, ...imports.map(i => i.id)) + 1 }]);
+          } else {
+            setImports(imports.map(i => i.id === editing.id ? { ...f, items: importItems, id: editing.id } : i));
+          }
           setModal(null);
         };
         const del = () => { if (window.confirm('למחוק?')) { setImports(imports.filter(i => i.id !== editing.id)); setModal(null); } };
+        
         return (
           <Modal title={isNew ? 'יבוא חדש' : 'עריכת יבוא'} onClose={() => setModal(null)}>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <select value={f.status} onChange={e => setF({ ...f, status: e.target.value })} className="bg-slate-700 text-white rounded-lg p-3">
-                  <option>בדרך</option><option>במכס</option><option>הגיע</option>
-                </select>
+                <div><label className="text-slate-400 text-xs">תאריך הזמנה</label>
+                  <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">סטטוס</label>
+                  <select value={f.status} onChange={e => setF({ ...f, status: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3">
+                    <option>בדרך</option><option>במכס</option><option>הגיע</option>
+                  </select></div>
               </div>
               <input placeholder="שם הספק" value={f.supplier} onChange={e => setF({ ...f, supplier: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
-              <div className="text-slate-300 text-sm">כמויות:</div>
-              {products.map((p, idx) => (
-                <div key={p.id} className="flex justify-between items-center bg-slate-700/50 p-2 rounded">
-                  <span className="text-white text-sm">{p.name}</span>
-                  <input type="number" min="0" value={f.items?.[idx]?.cartons || 0} onChange={e => { const items = [...f.items]; items[idx] = { productId: p.id, cartons: +e.target.value || 0 }; setF({ ...f, items }); }} className="w-16 bg-slate-600 text-white rounded p-2 text-center" />
-                </div>
-              ))}
+              <div><label className="text-slate-400 text-xs">תאריך הגעה צפוי</label>
+                <input type="date" value={f.expectedDate || ''} onChange={e => setF({ ...f, expectedDate: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+              
+              <div className="text-slate-300 text-sm">כמויות (קרטונים):</div>
+              {products.map(p => {
+                const item = items.find(i => i.productId === p.id) || { cartons: 0 };
+                return (
+                  <div key={p.id} className="flex justify-between items-center bg-slate-700/50 p-2 rounded">
+                    <span className="text-white text-sm">{p.name}</span>
+                    <input type="number" min="0" value={item.cartons || ''} onChange={e => updateItem(p.id, +e.target.value || 0)} className="w-20 bg-slate-600 text-white rounded p-2 text-center" />
+                  </div>
+                );
+              })}
+              
               <div className="grid grid-cols-2 gap-2">
-                <input type="number" placeholder="עלות מוצרים" value={f.productCost} onChange={e => setF({ ...f, productCost: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" placeholder="משלוח" value={f.shipping} onChange={e => setF({ ...f, shipping: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" placeholder="מכס" value={f.customs} onChange={e => setF({ ...f, customs: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
-                <input type="number" placeholder="ביטוח" value={f.insurance} onChange={e => setF({ ...f, insurance: +e.target.value || 0 })} className="bg-slate-700 text-white rounded-lg p-3" />
+                <div><label className="text-slate-400 text-xs">עלות מוצרים</label><input type="number" value={f.productCost} onChange={e => setF({ ...f, productCost: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">משלוח</label><input type="number" value={f.shipping} onChange={e => setF({ ...f, shipping: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">מכס</label><input type="number" value={f.customs} onChange={e => setF({ ...f, customs: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">ביטוח</label><input type="number" value={f.insurance} onChange={e => setF({ ...f, insurance: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
               </div>
               <div className="bg-amber-500/20 p-2 rounded text-center text-amber-400 font-bold">סה"כ: {fmt(f.productCost + f.shipping + f.customs + f.insurance)}</div>
-              <textarea placeholder="הערות" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
               <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
               {!isNew && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
             </div>
@@ -336,80 +490,273 @@
         );
       };
 
+      // EDIT EXPENSE
+      const EditExpense = () => {
+        const isNew = !editing?.id;
+        const [f, setF] = useState(editing || { date: new Date().toISOString().split('T')[0], category: 'דלק', amount: 0, description: '', notes: '' });
+        const submit = () => {
+          if (isNew) setExpenses([...expenses, { ...f, id: Math.max(0, ...expenses.map(e => e.id)) + 1 }]);
+          else setExpenses(expenses.map(e => e.id === editing.id ? { ...f, id: editing.id } : e));
+          setModal(null);
+        };
+        const del = () => { if (window.confirm('למחוק?')) { setExpenses(expenses.filter(e => e.id !== editing.id)); setModal(null); } };
+        return (
+          <Modal title={isNew ? 'הוצאה חדשה' : 'עריכת הוצאה'} onClose={() => setModal(null)}>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="text-slate-400 text-xs">תאריך</label>
+                  <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+                <div><label className="text-slate-400 text-xs">קטגוריה</label>
+                  <select value={f.category} onChange={e => setF({ ...f, category: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3">
+                    <option>דלק</option><option>הובלות</option><option>אחסנה</option><option>שינוע</option><option>מכס</option><option>ביטוח</option><option>אחר</option>
+                  </select></div>
+              </div>
+              <div><label className="text-slate-400 text-xs">סכום</label>
+                <input type="number" value={f.amount} onChange={e => setF({ ...f, amount: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
+              <input placeholder="תיאור" value={f.description} onChange={e => setF({ ...f, description: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
+              <textarea placeholder="הערות" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} className="w-full bg-slate-700 text-white rounded-lg p-3" rows="2" />
+              <button onClick={submit} className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-lg">שמור</button>
+              {!isNew && <button onClick={del} className="w-full bg-red-500/20 text-red-400 py-2 rounded-lg">מחק</button>}
+            </div>
+          </Modal>
+        );
+      };
+
+      // VIEW CUSTOMER DETAILS
+      const CustomerDetails = () => {
+        const c = viewCustomer;
+        const customerSales = sales.filter(s => s.customerId === c.id);
+        const totalAmount = customerSales.reduce((sum, s) => sum + calcSaleTotal(s), 0);
+        const productsSold = {};
+        customerSales.forEach(s => {
+          (s.items || []).forEach(item => {
+            if (!productsSold[item.productId]) productsSold[item.productId] = 0;
+            productsSold[item.productId] += item.cartons;
+          });
+        });
+        return (
+          <Modal title={`פרטי לקוח: ${c.name}`} onClose={() => setViewCustomer(null)}>
+            <div className="space-y-4">
+              <div className="bg-slate-700/50 p-3 rounded-lg">
+                <div className="text-slate-400 text-sm">טלפון: <span className="text-white">{c.phone || '-'}</span></div>
+                <div className="text-slate-400 text-sm">כתובת: <span className="text-white">{c.address || '-'}</span></div>
+                <div className="text-slate-400 text-sm">איש קשר: <span className="text-white">{c.contactPerson || '-'}</span></div>
+                <div className="text-slate-400 text-sm">תנאי תשלום: <span className="text-white">{c.paymentTerms}</span></div>
+              </div>
+              
+              <div className="bg-amber-500/20 p-3 rounded-lg">
+                <div className="text-amber-400 font-bold text-lg">סה"כ מכירות: {fmt(totalAmount)}</div>
+                <div className="text-slate-300 text-sm">{customerSales.length} הזמנות</div>
+              </div>
+              
+              <div className="text-slate-300 font-bold">מוצרים שנרכשו:</div>
+              <div className="space-y-1">
+                {Object.entries(productsSold).map(([pid, cartons]) => {
+                  const p = products.find(x => x.id === +pid);
+                  return <div key={pid} className="flex justify-between bg-slate-700/30 p-2 rounded text-sm">
+                    <span className="text-white">{p?.name}</span>
+                    <span className="text-amber-400">{cartons} קרטונים</span>
+                  </div>;
+                })}
+              </div>
+              
+              <div className="text-slate-300 font-bold">היסטוריית מכירות:</div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {customerSales.map(s => (
+                  <div key={s.id} className="bg-slate-700/30 p-2 rounded text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">{s.date}</span>
+                      <span className="text-amber-400 font-bold">{fmt(calcSaleTotal(s))}</span>
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      {(s.items || []).map(item => {
+                        const p = products.find(x => x.id === item.productId);
+                        return `${p?.name}: ${item.cartons} קרט`;
+                      }).join(' | ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Modal>
+        );
+      };
+
+      // DASHBOARD
       const Dashboard = () => (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-amber-500/20 rounded-xl p-4 border border-amber-500/30"><div className="text-amber-400 text-xs">מכירות</div><div className="text-xl font-bold text-white">{fmt(totalSales)}</div></div>
-            <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30"><div className="text-red-400 text-xs">ממתין</div><div className="text-xl font-bold text-white">{fmt(pending)}</div></div>
+            <div className="bg-amber-500/20 rounded-xl p-4 border border-amber-500/30">
+              <div className="text-amber-400 text-xs">סה"כ מכירות</div>
+              <div className="text-xl font-bold text-white">{fmt(totalSales)}</div>
+            </div>
+            <div className="bg-emerald-500/20 rounded-xl p-4 border border-emerald-500/30">
+              <div className="text-emerald-400 text-xs">רווח משוער</div>
+              <div className="text-xl font-bold text-white">{fmt(totalSales - totalExpenses)}</div>
+            </div>
           </div>
+
+          {/* Week Payments */}
+          {weekPayments.length > 0 && (
+            <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-500/30">
+              <h3 className="text-blue-400 font-bold mb-2">💰 תשלומים צפויים השבוע</h3>
+              <div className="text-xl font-bold text-white mb-2">{fmt(weekPaymentsTotal)}</div>
+              {weekPayments.map(s => {
+                const c = customers.find(x => x.id === s.customerId);
+                const total = calcSaleTotal(s);
+                const paid = (s.payments || []).reduce((p, x) => p + x.amount, 0);
+                return <div key={s.id} className="flex justify-between text-sm bg-slate-700/30 p-2 rounded mb-1">
+                  <span className="text-white">{c?.name}</span>
+                  <span className="text-blue-400">{fmt(total - paid)} • {s.paymentDueDate}</span>
+                </div>;
+              })}
+            </div>
+          )}
+
+          {/* Week Leads */}
+          {weekLeads.length > 0 && (
+            <div className="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
+              <h3 className="text-purple-400 font-bold mb-2">🎯 פולואפ השבוע ({weekLeads.length})</h3>
+              {weekLeads.map(l => (
+                <div key={l.id} onClick={() => { setEditing(l); setModal('lead'); }} className="flex justify-between bg-slate-700/30 p-2 rounded mb-1 cursor-pointer">
+                  <span className="text-white text-sm">{l.name}</span>
+                  <span className="text-purple-400 text-xs">{l.nextFollowUp}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Low Stock Alert */}
+          {lowStock.length > 0 && (
+            <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+              <h3 className="text-red-400 font-bold mb-2">⚠️ מלאי נמוך</h3>
+              {lowStock.map(p => (
+                <div key={p.id} className="flex justify-between text-sm bg-slate-700/30 p-2 rounded mb-1">
+                  <span className="text-white">{p.name}</span>
+                  <span className="text-red-400">{p.current} קרטונים (מינימום: {p.minStock})</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => { setEditing(null); setModal('sale'); }} className="bg-amber-500 text-slate-900 font-bold py-3 rounded-xl">+ מכירה</button>
             <button onClick={() => { setEditing(null); setModal('customer'); }} className="bg-slate-700 text-white font-bold py-3 rounded-xl">+ לקוח</button>
           </div>
+
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
             <h3 className="text-white font-bold mb-3">מכירות אחרונות</h3>
             {[...sales].reverse().slice(0, 5).map(s => {
               const c = customers.find(x => x.id === s.customerId);
               return <div key={s.id} onClick={() => { setEditing(s); setModal('sale'); }} className="flex justify-between bg-slate-700/30 p-2 rounded-lg mb-2 cursor-pointer hover:bg-slate-700/50">
                 <div><div className="text-white text-sm">{c?.name}</div><div className="text-slate-400 text-xs">{s.date}</div></div>
-                <div className="text-amber-400 font-bold">{fmt(calcTotal(s))}</div>
+                <div className="text-amber-400 font-bold">{fmt(calcSaleTotal(s))}</div>
               </div>;
             })}
           </div>
         </div>
       );
 
+      // INVENTORY
       const Inventory = () => (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-white">מלאי</h2>
-            <button onClick={() => { setEditing(null); setModal('import'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ יבוא</button>
+            <div className="flex gap-2">
+              <button onClick={() => exportToExcel('inventory')} className="bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm">📊 Excel</button>
+              <button onClick={() => { setEditing(null); setModal('product'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ מוצר</button>
+            </div>
           </div>
-          {invBalance.map(p => (
-            <div key={p.id} onClick={() => { setEditing(p); setModal('product'); }} className={`bg-slate-800/50 rounded-xl p-3 border cursor-pointer hover:bg-slate-700/50 ${p.remain < p.minStock ? 'border-red-500/50' : 'border-slate-700'}`}>
-              <div className="flex justify-between">
-                <div><div className="text-white font-bold">{p.name}</div><div className="text-slate-400 text-xs">{p.boxesPerCarton} קופ/קרטון • ₪{p.pricePerBox}/קופ</div></div>
-                <div className="text-left"><div className={`font-bold ${p.remain < p.minStock ? 'text-red-400' : 'text-white'}`}>{p.remain} קרטונים</div><div className="text-emerald-400 text-xs">רווח 100%</div></div>
+          
+          {inventory.map(p => (
+            <div key={p.id} onClick={() => { setEditing(p); setModal('product'); }} className={`bg-slate-800/50 rounded-xl p-3 border cursor-pointer hover:bg-slate-700/50 ${p.isLow ? 'border-red-500/50' : 'border-slate-700'}`}>
+              <div className="flex justify-between mb-2">
+                <div className="text-white font-bold">{p.name}</div>
+                {p.isLow && <span className="text-red-400 text-xs">⚠️ מלאי נמוך</span>}
               </div>
+              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                <div className="bg-slate-700/50 p-2 rounded"><div className="text-slate-400">התחלתי</div><div className="text-white font-bold">{p.initial}</div></div>
+                <div className="bg-slate-700/50 p-2 rounded"><div className="text-slate-400">נמכר</div><div className="text-orange-400 font-bold">{p.sold}</div></div>
+                <div className={`p-2 rounded ${p.isLow ? 'bg-red-500/20' : 'bg-slate-700/50'}`}><div className="text-slate-400">נוכחי</div><div className={`font-bold ${p.isLow ? 'text-red-400' : 'text-white'}`}>{p.current}</div></div>
+                <div className="bg-emerald-500/20 p-2 rounded"><div className="text-slate-400">עתידי</div><div className="text-emerald-400 font-bold">{p.future}</div></div>
+              </div>
+              {p.incoming > 0 && <div className="text-blue-400 text-xs mt-2">📦 {p.incoming} קרטונים בדרך</div>}
+              {p.notes && <div className="text-slate-500 text-xs mt-1">📝 {p.notes}</div>}
             </div>
           ))}
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-amber-400 font-bold mb-2">יבואים</h3>
-            {imports.map(im => (
-              <div key={im.id} onClick={() => { setEditing(im); setModal('import'); }} className="bg-slate-700/30 p-2 rounded mb-2 cursor-pointer hover:bg-slate-700/50">
-                <div className="flex justify-between"><span className="text-white text-sm">{im.supplier}</span><span className={`text-xs px-2 py-0.5 rounded-full ${im.status === 'הגיע' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{im.status}</span></div>
-                <div className="text-slate-400 text-xs">{im.date} • {fmt(im.productCost + im.shipping + im.customs + im.insurance)}</div>
+
+          <div className="flex justify-between items-center mt-6">
+            <h3 className="text-amber-400 font-bold">יבואים</h3>
+            <button onClick={() => { setEditing(null); setModal('import'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ יבוא</button>
+          </div>
+          {imports.map(im => (
+            <div key={im.id} onClick={() => { setEditing(im); setModal('import'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
+              <div className="flex justify-between">
+                <span className="text-white">{im.supplier}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${im.status === 'הגיע' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{im.status}</span>
               </div>
-            ))}
-          </div>
+              <div className="text-slate-400 text-xs">{im.date} • {fmt(im.productCost + im.shipping + im.customs + im.insurance)}</div>
+              {im.expectedDate && im.status !== 'הגיע' && <div className="text-blue-400 text-xs">צפי הגעה: {im.expectedDate}</div>}
+            </div>
+          ))}
         </div>
       );
 
-      const Sales = () => (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-white">מכירות</h2>
-            <button onClick={() => { setEditing(null); setModal('sale'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ מכירה</button>
-          </div>
-          <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-            {[...sales].reverse().map(s => {
-              const c = customers.find(x => x.id === s.customerId);
-              const total = calcTotal(s);
-              const paid = (s.payments || []).reduce((sum, p) => sum + p.amount, 0);
-              return <div key={s.id} onClick={() => { setEditing(s); setModal('sale'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
-                <div className="flex justify-between">
-                  <div><div className="text-white font-bold">{c?.name}</div><div className="text-slate-400 text-xs">{s.date} • {s.invoiceNumber}</div></div>
-                  <div className="text-left"><div className="text-amber-400 font-bold">{fmt(total)}</div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.paymentStatus === 'שולם' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'חלקי' ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}`}>{s.paymentStatus}</span>
+      // SALES
+      const Sales = () => {
+        const pending = sales.filter(s => s.paymentStatus !== 'שולם');
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">מכירות</h2>
+              <div className="flex gap-2">
+                <button onClick={() => exportToExcel('sales')} className="bg-emerald-500 text-white px-2 py-1.5 rounded-lg text-xs">📊 מכירות</button>
+                <button onClick={() => exportToExcel('products')} className="bg-blue-500 text-white px-2 py-1.5 rounded-lg text-xs">📊 מוצרים</button>
+                <button onClick={() => { setEditing(null); setModal('sale'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ מכירה</button>
+              </div>
+            </div>
+
+            {pending.length > 0 && (
+              <div className="bg-orange-500/20 rounded-xl p-3 border border-orange-500/30">
+                <h3 className="text-orange-400 font-bold text-sm mb-2">ממתין לתשלום ({pending.length})</h3>
+                {pending.map(s => {
+                  const c = customers.find(x => x.id === s.customerId);
+                  const total = calcSaleTotal(s);
+                  const paid = (s.payments || []).reduce((sum, p) => sum + p.amount, 0);
+                  return <div key={s.id} onClick={() => { setEditing(s); setModal('sale'); }} className="flex justify-between bg-slate-700/30 p-2 rounded mb-1 cursor-pointer text-sm">
+                    <div>
+                      <span className="text-white">{c?.name}</span>
+                      {s.paymentDueDate && <span className="text-orange-400 text-xs mr-2">📅 {s.paymentDueDate}</span>}
+                    </div>
+                    <span className="text-orange-400">{fmt(total - paid)}</span>
+                  </div>;
+                })}
+              </div>
+            )}
+
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {[...sales].reverse().map(s => {
+                const c = customers.find(x => x.id === s.customerId);
+                const total = calcSaleTotal(s);
+                const paid = (s.payments || []).reduce((sum, p) => sum + p.amount, 0);
+                return <div key={s.id} onClick={() => { setEditing(s); setModal('sale'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
+                  <div className="flex justify-between">
+                    <div><div className="text-white font-bold">{c?.name}</div><div className="text-slate-400 text-xs">{s.date} • {s.invoiceNumber}</div></div>
+                    <div className="text-left"><div className="text-amber-400 font-bold">{fmt(total)}</div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${s.paymentStatus === 'שולם' ? 'bg-emerald-500/20 text-emerald-400' : s.paymentStatus === 'חלקי' ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}`}>{s.paymentStatus}</span>
+                    </div>
                   </div>
-                </div>
-                {s.paymentStatus !== 'שולם' && <div className="text-red-400 text-xs mt-1">יתרה: {fmt(total - paid)}</div>}
-              </div>;
-            })}
+                  {s.paymentDueDate && s.paymentStatus !== 'שולם' && <div className="text-blue-400 text-xs mt-1">📅 צפי תשלום: {s.paymentDueDate}</div>}
+                  {s.paymentStatus !== 'שולם' && <div className="text-red-400 text-xs">יתרה: {fmt(total - paid)}</div>}
+                  {s.notes && <div className="text-slate-500 text-xs mt-1">📝 {s.notes}</div>}
+                </div>;
+              })}
+            </div>
           </div>
-        </div>
-      );
+        );
+      };
 
+      // CUSTOMERS
       const Customers = () => (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -418,12 +765,24 @@
           </div>
           <div className="space-y-2 max-h-[70vh] overflow-y-auto">
             {customers.map(c => {
-              const total = sales.filter(s => s.customerId === c.id).reduce((sum, s) => sum + calcTotal(s), 0);
-              return <div key={c.id} onClick={() => { setEditing(c); setModal('customer'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
-                <div className="flex justify-between">
-                  <div><div className="flex items-center gap-2"><span className="text-white font-bold">{c.name}</span><span className="text-amber-400 text-xs">{'⭐'.repeat(c.rating)}</span></div>
-                    <div className="text-slate-400 text-xs">{c.phone} • {c.address}</div></div>
-                  <div className="text-amber-400 font-bold">{fmt(total)}</div>
+              const customerSales = sales.filter(s => s.customerId === c.id);
+              const total = customerSales.reduce((sum, s) => sum + calcSaleTotal(s), 0);
+              const productCount = new Set(customerSales.flatMap(s => (s.items || []).map(i => i.productId))).size;
+              return <div key={c.id} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1" onClick={() => setViewCustomer(c)}>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-white font-bold">{c.name}</span>
+                      <span className="text-amber-400 text-xs">{'★'.repeat(c.rating)}</span>
+                    </div>
+                    <div className="text-slate-400 text-xs">{c.phone} • {c.address}</div>
+                    <div className="text-slate-500 text-xs">{customerSales.length} הזמנות • {productCount} סוגי מוצרים</div>
+                    {c.notes && <div className="text-slate-500 text-xs">📝 {c.notes}</div>}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-amber-400 font-bold">{fmt(total)}</div>
+                    <button onClick={() => { setEditing(c); setModal('customer'); }} className="text-slate-400 text-xs hover:text-white">✏️ ערוך</button>
+                  </div>
                 </div>
               </div>;
             })}
@@ -431,7 +790,13 @@
         </div>
       );
 
+      // LEADS
       const Leads = () => {
+        const sorted = [...leads].sort((a, b) => {
+          if (!a.nextFollowUp) return 1;
+          if (!b.nextFollowUp) return -1;
+          return a.nextFollowUp.localeCompare(b.nextFollowUp);
+        });
         const colors = { 'חדש': 'bg-blue-500/20 text-blue-400', 'פנייה ראשונה': 'bg-yellow-500/20 text-yellow-400', 'פגישה': 'bg-purple-500/20 text-purple-400', 'הצעת מחיר': 'bg-orange-500/20 text-orange-400', 'לא רלוונטי': 'bg-slate-500/20 text-slate-400' };
         return (
           <div className="space-y-4">
@@ -439,13 +804,32 @@
               <h2 className="text-lg font-bold text-white">לידים ({leads.length})</h2>
               <button onClick={() => { setEditing(null); setModal('lead'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ ליד</button>
             </div>
-            <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-              {leads.map(l => (
+            
+            {weekLeads.length > 0 && (
+              <div className="bg-purple-500/20 rounded-xl p-3 border border-purple-500/30">
+                <h3 className="text-purple-400 font-bold text-sm mb-2">📅 פולואפ השבוע ({weekLeads.length})</h3>
+                {weekLeads.map(l => (
+                  <div key={l.id} onClick={() => { setEditing(l); setModal('lead'); }} className="flex justify-between bg-slate-700/30 p-2 rounded mb-1 cursor-pointer">
+                    <span className="text-white text-sm">{l.name}</span>
+                    <span className="text-purple-400 text-xs">{l.nextFollowUp}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {sorted.map(l => (
                 <div key={l.id} onClick={() => { setEditing(l); setModal('lead'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
                   <div className="flex justify-between">
-                    <div><div className="flex items-center gap-2"><span className="text-white font-medium">{l.name}</span><span className={`px-2 py-0.5 rounded-full text-xs ${colors[l.status]}`}>{l.status}</span></div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-medium">{l.name}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${colors[l.status]}`}>{l.status}</span>
+                      </div>
+                      {l.contact && <div className="text-slate-400 text-xs">👤 {l.contact}</div>}
                       {l.phone && <div className="text-slate-400 text-xs">📞 {l.phone}</div>}
-                      {l.notes && <div className="text-slate-500 text-xs">📝 {l.notes}</div>}</div>
+                      {l.notes && <div className="text-slate-500 text-xs">📝 {l.notes}</div>}
+                    </div>
                     {l.nextFollowUp && <div className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded h-fit">📅 {l.nextFollowUp}</div>}
                   </div>
                 </div>
@@ -455,9 +839,58 @@
         );
       };
 
+      // EXPENSES
+      const Expenses = () => {
+        const byCategory = expenses.reduce((acc, e) => {
+          acc[e.category] = (acc[e.category] || 0) + e.amount;
+          return acc;
+        }, {});
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">הוצאות</h2>
+              <div className="flex gap-2">
+                <button onClick={() => exportToExcel('expenses')} className="bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm">📊 Excel</button>
+                <button onClick={() => { setEditing(null); setModal('expense'); }} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm">+ הוצאה</button>
+              </div>
+            </div>
+
+            <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+              <div className="text-red-400 text-xs">סה"כ הוצאות</div>
+              <div className="text-2xl font-bold text-white">{fmt(totalExpenses)}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(byCategory).map(([cat, amount]) => (
+                <div key={cat} className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                  <div className="text-slate-400 text-xs">{cat}</div>
+                  <div className="text-white font-bold">{fmt(amount)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {[...expenses].reverse().map(e => (
+                <div key={e.id} onClick={() => { setEditing(e); setModal('expense'); }} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 cursor-pointer hover:bg-slate-700/50">
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="text-white font-medium">{e.description || e.category}</div>
+                      <div className="text-slate-400 text-xs">{e.date} • {e.category}</div>
+                      {e.notes && <div className="text-slate-500 text-xs">📝 {e.notes}</div>}
+                    </div>
+                    <div className="text-red-400 font-bold">{fmt(e.amount)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      // SETTINGS
       const Settings = () => {
         const exp = () => {
-          const data = { products, inventory, sales, customers, leads, imports, targets };
+          const data = { products, sales, customers, leads, imports, expenses, targets };
           const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
           const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `vnb-backup-${new Date().toISOString().split('T')[0]}.json`; a.click();
         };
@@ -468,33 +901,50 @@
             r.onload = ev => {
               try {
                 const d = JSON.parse(ev.target.result);
-                if (window.confirm('לטעון גיבוי?')) {
-                  if (d.products) setProducts(d.products); if (d.inventory) setInventory(d.inventory);
-                  if (d.sales) setSales(d.sales); if (d.customers) setCustomers(d.customers);
-                  if (d.leads) setLeads(d.leads); if (d.imports) setImports(d.imports);
+                if (window.confirm('לטעון גיבוי? זה ימחק את כל הנתונים הנוכחיים')) {
+                  if (d.products) setProducts(d.products);
+                  if (d.sales) setSales(d.sales);
+                  if (d.customers) setCustomers(d.customers);
+                  if (d.leads) setLeads(d.leads);
+                  if (d.imports) setImports(d.imports);
+                  if (d.expenses) setExpenses(d.expenses);
                   if (d.targets) setTargets(d.targets);
-                  alert('נטען!');
+                  alert('הגיבוי נטען בהצלחה!');
                 }
-              } catch { alert('שגיאה'); }
+              } catch { alert('שגיאה בקריאת הקובץ'); }
             };
             r.readAsText(file);
           }
         };
-        const reset = () => { if (window.confirm('לאפס הכל?')) { localStorage.clear(); window.location.reload(); } };
+        const reset = () => { if (window.confirm('למחוק את כל הנתונים?')) { localStorage.clear(); window.location.reload(); } };
         return (
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-white">הגדרות</h2>
+            
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-amber-400 font-bold mb-3">יעד חודשי</h3>
-              <input type="number" value={targets.monthly} onChange={e => setTargets({ ...targets, monthly: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" />
+              <h3 className="text-amber-400 font-bold mb-3">יעדים</h3>
+              <div><label className="text-slate-400 text-xs">יעד מכירות חודשי</label>
+                <input type="number" value={targets.monthly} onChange={e => setTargets({ ...targets, monthly: +e.target.value || 0 })} className="w-full bg-slate-700 text-white rounded-lg p-3" /></div>
             </div>
+
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <h3 className="text-amber-400 font-bold mb-3">ייצוא לאקסל</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => exportToExcel('sales')} className="bg-emerald-500 text-white py-2 rounded-lg text-sm">📊 מכירות</button>
+                <button onClick={() => exportToExcel('products')} className="bg-blue-500 text-white py-2 rounded-lg text-sm">📊 לפי מוצר</button>
+                <button onClick={() => exportToExcel('inventory')} className="bg-purple-500 text-white py-2 rounded-lg text-sm">📊 מלאי</button>
+                <button onClick={() => exportToExcel('expenses')} className="bg-red-500 text-white py-2 rounded-lg text-sm">📊 הוצאות</button>
+              </div>
+            </div>
+
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
               <h3 className="text-amber-400 font-bold mb-3">גיבוי</h3>
               <button onClick={exp} className="w-full bg-emerald-500 text-white py-3 rounded-lg font-bold mb-2">📥 הורד גיבוי</button>
               <label className="w-full bg-blue-500 text-white py-3 rounded-lg font-bold flex items-center justify-center cursor-pointer">📤 טען גיבוי<input type="file" accept=".json" onChange={imp} className="hidden" /></label>
             </div>
+
             <div className="bg-red-500/10 rounded-xl p-4 border border-red-500/30">
-              <button onClick={reset} className="w-full bg-red-500 text-white py-3 rounded-lg font-bold">🗑️ אפס הכל</button>
+              <button onClick={reset} className="w-full bg-red-500 text-white py-3 rounded-lg font-bold">🗑️ מחק את כל הנתונים</button>
             </div>
           </div>
         );
@@ -506,6 +956,7 @@
         { id: 'sales', icon: '💰', label: 'מכירות' },
         { id: 'customers', icon: '👥', label: 'לקוחות' },
         { id: 'leads', icon: '🎯', label: 'לידים' },
+        { id: 'expenses', icon: '💸', label: 'הוצאות' },
         { id: 'settings', icon: '⚙️', label: 'הגדרות' },
       ];
 
@@ -514,33 +965,42 @@
           <header className="bg-slate-800/90 backdrop-blur sticky top-0 z-40 border-b border-slate-700">
             <div className="max-w-lg mx-auto px-4 py-3 flex justify-between items-center">
               <div><h1 className="text-xl font-bold text-amber-400">VNB</h1><p className="text-xs text-slate-400">מערכת ניהול</p></div>
-              <div className="text-amber-400 font-bold">{fmt(totalSales)}</div>
+              <div className="text-left">
+                <div className="text-amber-400 font-bold">{fmt(totalSales)}</div>
+                <div className="text-slate-400 text-xs">מכירות</div>
+              </div>
             </div>
           </header>
+          
           <main className="max-w-lg mx-auto px-4 py-4 pb-24">
             {tab === 'dashboard' && <Dashboard />}
             {tab === 'inventory' && <Inventory />}
             {tab === 'sales' && <Sales />}
             {tab === 'customers' && <Customers />}
             {tab === 'leads' && <Leads />}
+            {tab === 'expenses' && <Expenses />}
             {tab === 'settings' && <Settings />}
           </main>
+          
           <nav className="fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur border-t border-slate-700">
-            <div className="max-w-lg mx-auto px-2 py-1">
+            <div className="max-w-lg mx-auto px-1">
               <div className="flex justify-around">
                 {tabs.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)} className={`flex flex-col items-center py-2 px-3 rounded-lg ${tab === t.id ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400'}`}>
-                    <span className="text-lg">{t.icon}</span><span className="text-xs">{t.label}</span>
+                  <button key={t.id} onClick={() => setTab(t.id)} className={`flex flex-col items-center py-2 px-2 rounded-lg ${tab === t.id ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400'}`}>
+                    <span className="text-lg">{t.icon}</span><span className="text-[10px]">{t.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           </nav>
+          
           {modal === 'sale' && <EditSale />}
           {modal === 'customer' && <EditCustomer />}
           {modal === 'lead' && <EditLead />}
           {modal === 'product' && <EditProduct />}
           {modal === 'import' && <EditImport />}
+          {modal === 'expense' && <EditExpense />}
+          {viewCustomer && <CustomerDetails />}
         </div>
       );
     }
