@@ -1,804 +1,917 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VNB - מערכת ניהול</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; margin: 0; background: linear-gradient(to bottom, #0f172a, #1e293b, #0f172a); min-height: 100vh; }
-    .tab-btn { padding: 8px 4px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-    .tab-btn.active { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-    .tab-btn:not(.active) { color: #94a3b8; }
-    .card { background: rgba(30, 41, 59, 0.5); border-radius: 12px; padding: 12px; border: 1px solid #334155; margin-bottom: 8px; }
-    .btn { background: #f59e0b; color: #0f172a; font-weight: bold; padding: 12px; border-radius: 8px; border: none; cursor: pointer; width: 100%; }
-    .btn-secondary { background: #334155; color: white; }
-    .input { width: 100%; background: #334155; color: white; border: none; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
-    .modal { background: #1e293b; border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow: hidden; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #334155; }
-    .modal-body { padding: 16px; overflow-y: auto; max-height: calc(90vh - 60px); }
-    .hidden { display: none !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>VNB - מערכת ניהול</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0e14;--sf:#141820;--card:#1a1f2b;--brd:#252d3d;--pri:#f5a623;--priD:#d4891a;--suc:#22c55e;--dan:#ef4444;--inf:#3b82f6;--pur:#8b5cf6;--warn:#f59e0b;--txt:#e8ecf4;--txt2:#94a3b8;--txt3:#5a6577}
+html{font-size:14px}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+input,select,textarea,button{font-family:'Heebo',sans-serif;font-size:.88rem}
+input,select,textarea{width:100%;padding:9px 11px;background:var(--bg);border:1px solid var(--brd);border-radius:10px;color:var(--txt);outline:none}
+input:focus,select:focus{border-color:var(--pri)}
+button{cursor:pointer;border:none;background:none;color:var(--txt)}
+.btn{padding:9px 16px;border-radius:10px;font-weight:600;display:inline-flex;align-items:center;gap:5px;justify-content:center;transition:all .15s;font-size:.85rem}
+.btn-p{background:var(--pri);color:#000}.btn-p:active{background:var(--priD)}
+.btn-d{background:var(--dan);color:#fff}
+.btn-o{border:1px solid var(--brd);color:var(--txt2)}.btn-o:active{background:var(--card)}
+.btn-s{background:var(--suc);color:#fff}
+.btn-i{background:var(--inf);color:#fff}
+.btn-w{background:#25D366;color:#fff}
+.btn-sm{padding:5px 10px;font-size:.77rem;border-radius:8px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:600}
+.b-s{background:#22c55e22;color:#22c55e}.b-d{background:#ef444422;color:#ef4444}
+.b-w{background:#f59e0b22;color:#f59e0b}.b-i{background:#3b82f622;color:#3b82f6}
+.b-p{background:#8b5cf622;color:#8b5cf6}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:9px;border:1px solid var(--brd)}
+.sc{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--brd);text-align:center}
+.sc .v{font-size:1.25rem;font-weight:800}.sc .l{font-size:.73rem;color:var(--txt2);margin-top:1px}
+.sc .s{font-size:.68rem;color:var(--txt3);margin-top:1px}
+.hdr{position:sticky;top:0;z-index:100;background:var(--sf);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--brd)}
+.pbar{padding:7px 14px;background:linear-gradient(90deg,var(--card),var(--sf));border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.75rem;position:sticky;top:42px;z-index:90}
+.pbar .sep{width:1px;height:14px;background:var(--brd)}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1px solid var(--brd);z-index:100;padding:3px 0 max(3px,env(safe-area-inset-bottom))}
+.nav-i{display:flex;justify-content:space-around;max-width:520px;margin:0 auto;overflow-x:auto}
+.nav button{display:flex;flex-direction:column;align-items:center;padding:3px 5px;border-radius:8px;font-size:8.5px;color:var(--txt3);gap:0px;min-width:0;white-space:nowrap}
+.nav button.a{color:var(--pri);background:rgba(245,166,35,.1)}
+.nav button .ic{font-size:16px}
+.pg{max-width:520px;margin:0 auto;padding:8px 12px 82px}
+.tb{display:flex;background:var(--bg);border-radius:10px;padding:2px;margin-bottom:9px}
+.tb button{flex:1;padding:6px;border-radius:8px;font-size:.75rem;font-weight:500;color:var(--txt3)}
+.tb button.a{background:var(--card);color:var(--txt);border:1px solid var(--brd)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--card);border-radius:11px;margin-bottom:6px;border:1px solid var(--brd)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.fg{margin-bottom:9px}.fg label{display:block;font-size:.75rem;color:var(--txt2);margin-bottom:2px;font-weight:500}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.md{background:var(--sf);width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px;animation:su .25s}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.md h3{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.prg{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}.prg .f{height:100%;border-radius:3px;transition:width .5s}
+.pt{display:flex;background:var(--bg);border-radius:7px;padding:2px}
+.pt button{padding:3px 9px;border-radius:5px;font-size:.68rem;font-weight:600;color:var(--txt3)}
+.pt button.a{background:var(--card);color:var(--txt)}
+.fi{animation:fi .25s}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.emp{text-align:center;padding:28px;color:var(--txt3)}
+.sr{position:relative;margin-bottom:9px}.sr input{padding-right:32px}.sr .ic{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--txt3)}
+.visit-tag{display:inline-block;padding:2px 6px;margin:1px;border-radius:6px;font-size:.65rem;background:var(--bg);color:var(--txt2)}
+</style>
 </head>
 <body>
-  <div id="app"></div>
-  
-  <script>
-    // Data
-    const VAT = 0.18;
-    
-    const defaultProducts = [
-      { id: 1, name: 'בורג 35*2.5', boxesPerCarton: 20, pricePerBox: 13, costPerBox: 6.5, initialStock: 68, minStock: 5 },
-      { id: 2, name: 'בורג 35*3.5', boxesPerCarton: 16, pricePerBox: 19, costPerBox: 9.5, initialStock: 26, minStock: 5 },
-      { id: 3, name: 'בורג 4.2*13', boxesPerCarton: 20, pricePerBox: 17, costPerBox: 8.5, initialStock: 42, minStock: 5 },
-      { id: 4, name: 'בורג 4.8*3.5', boxesPerCarton: 16, pricePerBox: 18, costPerBox: 9, initialStock: 72, minStock: 5 },
-    ];
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useEffect,useMemo,useRef}=React;
+const VAT=0.18;
+const ECATS=["מכס","עמיל מכס","מע\"מ","שינוע","דלק","הובלות","אחסנה","ביטוח","משכורות","מס","שיווק","ציוד","אחר"];
+const DOC_TYPES=["ללא","הצעת מחיר","חשבונית","תעודת משלוח","קבלה"];
+const ORDER_STATUSES=["ממתין","בהכנה","נשלח","סופק"];
+const LEAD_STATUSES=["חדש","פנייה ראשונה","פגישה","הצעת מחיר","לקוח"];
 
-    const defaultCustomers = [
-      { id: 1, name: 'נור רחמים', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 2, name: 'אשל חומרי בניין', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 3, name: 'סימן טוב חומרי בניין', phone: '', address: 'אשדוד', paymentTerms: 'מזומן' },
-      { id: 4, name: 'אבו שושה חומרי בניין', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 5, name: 'אבידן בתי עץ', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 6, name: 'אחים הרוש', phone: '', address: '', paymentTerms: 'צק' },
-      { id: 7, name: 'עולם השלד', phone: '', address: 'תל אביב', paymentTerms: 'מזומן' },
-      { id: 8, name: 'פרימור ראשלצ', phone: '', address: 'ראשון לציון', paymentTerms: 'שוטף+60' },
-      { id: 9, name: 'זנו קרית מלאכי', phone: '', address: 'קרית מלאכי', paymentTerms: 'מזומן' },
-      { id: 10, name: 'עידן כחלון', phone: '', address: 'קרית מלאכי', paymentTerms: 'מזומן' },
-      { id: 11, name: 'בראשית גדרה', phone: '', address: 'גדרה', paymentTerms: 'מזומן' },
-      { id: 12, name: 'אחים ללזרי', phone: '', address: '', paymentTerms: 'שוטף+60' },
-      { id: 13, name: 'אדירים', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 14, name: 'אבו חיידר', phone: '', address: '', paymentTerms: 'מזומן' },
-      { id: 15, name: 'בן ישי', phone: '', address: '', paymentTerms: 'מזומן' },
-    ];
+// DEFAULT DATA
+const DP=[
+{id:1,name:"בורג 35*2.5",boxesPerCarton:20,pricePerBox:13,costPerBox:6.5,minStock:5},
+{id:2,name:"בורג 35*3.5",boxesPerCarton:16,pricePerBox:19,costPerBox:9.5,minStock:5},
+{id:3,name:"בורג 4.2*13",boxesPerCarton:20,pricePerBox:17,costPerBox:8.5,minStock:5},
+{id:4,name:"בורג 4.8*3.5",boxesPerCarton:16,pricePerBox:18,costPerBox:9,minStock:5}
+];
+const DI=[
+{productId:1,warehouse:"pallets",qty:5},{productId:1,warehouse:"cartons",qty:102},
+{productId:2,warehouse:"pallets",qty:3},{productId:2,warehouse:"cartons",qty:62},
+{productId:3,warehouse:"pallets",qty:6},{productId:3,warehouse:"cartons",qty:126},
+{productId:4,warehouse:"pallets",qty:5},{productId:4,warehouse:"cartons",qty:108}
+];
 
-    const defaultSales = [
-      { id: 1, date: '2025-12-27', customerId: 1, items: [{productId: 1, cartons: 3, price: 13}, {productId: 2, cartons: 2, price: 19}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 2, price: 9}], paid: 2378.88, status: 'שולם', notes: 'קרטון מעורב לפרסום' },
-      { id: 2, date: '2025-12-27', customerId: 2, items: [{productId: 1, cartons: 2, price: 6.5}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 1406.56, status: 'שולם', notes: '' },
-      { id: 3, date: '2025-12-28', customerId: 3, items: [{productId: 1, cartons: 2, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 2, price: 17}, {productId: 4, cartons: 5, price: 17.5}], paid: 3426.72, status: 'שולם', notes: 'ויקטור' },
-      { id: 4, date: '2025-12-29', customerId: 4, items: [{productId: 1, cartons: 2, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 2, price: 17}, {productId: 4, cartons: 5, price: 17.5}], paid: 1000, status: 'חלקי', notes: 'יתרה 1900' },
-      { id: 5, date: '2025-12-30', customerId: 5, items: [{productId: 1, cartons: 1, price: 13}, {productId: 2, cartons: 2, price: 19}, {productId: 3, cartons: 1, price: 17}], paid: 1425.44, status: 'שולם', notes: '' },
-      { id: 6, date: '2026-01-01', customerId: 6, items: [{productId: 1, cartons: 2, price: 13}, {productId: 2, cartons: 2, price: 19}, {productId: 3, cartons: 2, price: 17}, {productId: 4, cartons: 4, price: 18}], paid: 3492.8, status: 'שולם', notes: '' },
-      { id: 7, date: '2026-01-07', customerId: 7, items: [{productId: 2, cartons: 2, price: 19}, {productId: 4, cartons: 36, price: 18}], paid: 12951.68, status: 'שולם', notes: '' },
-      { id: 8, date: '2026-01-08', customerId: 8, items: [{productId: 1, cartons: 1, price: 13}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 0, status: 'ממתין', dueDate: '2026-03-08', notes: '' },
-      { id: 9, date: '2026-01-09', customerId: 9, items: [{productId: 1, cartons: 2, price: 13}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 1354.64, status: 'שולם', notes: '' },
-      { id: 10, date: '2026-01-09', customerId: 10, items: [{productId: 1, cartons: 4, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 2326.96, status: 'שולם', notes: '' },
-      { id: 11, date: '2026-01-09', customerId: 11, items: [{productId: 1, cartons: 2, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 1713.36, status: 'שולם', notes: '' },
-      { id: 12, date: '2026-01-11', customerId: 12, items: [{productId: 1, cartons: 3, price: 13}, {productId: 2, cartons: 2, price: 19}, {productId: 3, cartons: 2, price: 17}, {productId: 4, cartons: 3, price: 18}], paid: 0, status: 'ממתין', dueDate: '2026-03-11', notes: '' },
-      { id: 13, date: '2026-01-13', customerId: 13, items: [{productId: 1, cartons: 1, price: 13}], paid: 306.8, status: 'שולם', notes: '' },
-      { id: 14, date: '2026-01-14', customerId: 14, items: [{productId: 1, cartons: 1, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 1, price: 17}, {productId: 4, cartons: 1, price: 18}], paid: 1406.56, status: 'שולם', notes: '' },
-      { id: 15, date: '2026-01-13', customerId: 15, items: [{productId: 1, cartons: 2, price: 13}, {productId: 2, cartons: 1, price: 19}, {productId: 3, cartons: 2, price: 17}], paid: 1774.72, status: 'שולם', notes: '' },
-    ];
+const DC=[{"id": 1, "name": "נור רחמים", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 2, "name": "אשל חומרי בניין", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 3, "name": "סימן טוב חומרי בניין", "phone": "", "city": "פתח תקווה", "address": "פתח תקווה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 4, "name": "אבו שושה חומרי בניין", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 5, "name": "אבידן בתי עץ", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 6, "name": "אחים הרוש", "phone": "", "city": "", "address": "", "paymentTerms": "צק", "customPrices": {}, "visits": []}, {"id": 7, "name": "עולם השלד", "phone": "", "city": "תל אביב", "address": "תל אביב", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 8, "name": "פרימור ראשלצ", "phone": "", "city": "ראשון לציון", "address": "ראשון לציון", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 9, "name": "זנו קרית מלאכי", "phone": "", "city": "קרית מלאכי", "address": "קרית מלאכי", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 10, "name": "עידן כחלון", "phone": "", "city": "קרית מלאכי", "address": "קרית מלאכי", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 11, "name": "בראשית גדרה", "phone": "", "city": "גדרה", "address": "גדרה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 12, "name": "אחים ללזרי", "phone": "", "city": "", "address": "", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 13, "name": "אדירים", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 14, "name": "אבו חיידר", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 15, "name": "בן ישי", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 16, "name": "אלפה טולס", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 17, "name": "נתנאל חומרי בניין", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 18, "name": "רוני אור - נס ציונה", "phone": "", "city": "נס ציונה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 19, "name": "א.א.ד חומרי בניין", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 21, "name": "שאקר חומרי בניין תל שבע", "phone": "", "city": "תל שבע", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 22, "name": "נתן טמבור תל אביב הגנה", "phone": "", "city": "תל אביב", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 23, "name": "מעוף סנטר ראשל״צ", "phone": "", "city": "ראשון לציון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 24, "name": "ניר אמסלם חומרי בניין ראשל״צ", "phone": "", "city": "ראשון לציון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 25, "name": "מוחמד גואני תל ערד", "phone": "", "city": "תל ערד", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 26, "name": "אבי אדר חומרי בניין קרית גת", "phone": "", "city": "קרית גת", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 27, "name": "שלומי סנטר חומרי בניין", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 28, "name": "נאג׳ סאמרה חומרי בניין כסייפה", "phone": "", "city": "כסייפה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 30, "name": "מדינה נס ציונה", "phone": "", "city": "נס ציונה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 31, "name": "דני ובתיה ח׳ שיווק חגי קרית מלאכי", "phone": "", "city": "קרית מלאכי", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 32, "name": "עומר הכל למסגר שגב שלום", "phone": "", "city": "שגב שלום", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 33, "name": "אומנות הגימור", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 34, "name": "ספרדי הכל לבית נס ציונה", "phone": "", "city": "נס ציונה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 35, "name": "פארס סולטני חומרי בניין טירה", "phone": "", "city": "טירה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 36, "name": "כל בן צבעים טהה כפר קאסם", "phone": "", "city": "כפר קאסם", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 37, "name": "אחים אבו סבית חורה", "phone": "", "city": "חורה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 38, "name": "יורם ביתן חומרי בניין אשקלון", "phone": "", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 39, "name": "דור חומרי בניין אורלידור אספקה טכנית", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 40, "name": "עולם הצנרת אשקלון", "phone": "", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 41, "name": "לדארט", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 42, "name": "מתי מרכז הגבס זנוח", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 43, "name": "שחר אלון אינסטלציה בית שמש", "phone": "", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 44, "name": "אחים וזנה חומרי בניין בית שמש", "phone": "", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 45, "name": "אלי מסלולים ניצב", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 46, "name": "ראובן בן הרוש", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 47, "name": "ניר רוטשילד חומרי בניין בתי ים", "phone": "", "city": "בת ים", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 48, "name": "אומנות הגימור רמלה", "phone": "", "city": "רמלה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 49, "name": "גל כהנא אחד לבניין מבוא חורון", "phone": "", "city": "מבוא חורון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 50, "name": "עולם הצנרת", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 51, "name": "כל מתכת מדן אשקלון", "phone": "", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 52, "name": "סלמן רהט לב העיר", "phone": "", "city": "רהט", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 53, "name": "א.נ חומרי בניין רהט", "phone": "", "city": "רהט", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 54, "name": "עיסה נססרה מאסטר", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 55, "name": "חמאיסה חומרי בניין בעיר", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 56, "name": "חשמל הנמר חורה", "phone": "", "city": "חורה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 57, "name": "יוסף אבו סבית חורה", "phone": "", "city": "חורה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 58, "name": "עדן א.ב.י קרית גת", "phone": "", "city": "קרית גת", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 59, "name": "דבש בת ים", "phone": "", "city": "בת ים", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 60, "name": "מאור הבנאי מודיעין", "phone": "", "city": "מודיעין", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 61, "name": "מתי מרכז הגבס בית שמש", "phone": "", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}];
+const DS=[{"id": 1, "date": "2025-12-27", "customerId": 1, "items": [{"productId": 1, "qty": 6, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 3, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 9}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "קרטון מעורב לפרסום"}, {"id": 2, "date": "2025-12-27", "customerId": 2, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 6.5}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 3, "date": "2025-12-28", "customerId": 3, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 14}], "paid": 2900, "status": "שולם", "docType": "ללא", "notes": "ויקטור"}, {"id": 4, "date": "2025-12-29", "customerId": 4, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 17.5}], "paid": 1000, "status": "חלקי", "docType": "ללא", "notes": "יתרה 2160"}, {"id": 5, "date": "2025-12-30", "customerId": 5, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 6, "date": "2026-01-01", "customerId": 6, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 18}], "paid": 3785, "status": "שולם", "docType": "ללא", "notes": "שולם צ׳ק 28.2.26"}, {"id": 7, "date": "2026-01-07", "customerId": 7, "items": [{"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 4, "qty": 36, "unitType": "carton", "price": 15}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 8, "date": "2026-01-08", "customerId": 8, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 9, "date": "2026-01-09", "customerId": 9, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 1355, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 10, "date": "2026-01-09", "customerId": 10, "items": [{"productId": 1, "qty": 4, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 11, "date": "2026-01-09", "customerId": 11, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 1000, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 12, "date": "2026-01-11", "customerId": 12, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 3, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 13, "date": "2026-01-13", "customerId": 13, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 14, "date": "2026-01-14", "customerId": 14, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 15, "date": "2026-01-13", "customerId": 15, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 16, "date": "2026-01-18", "customerId": 16, "items": [{"productId": 1, "qty": 10, "unitType": "carton", "price": 11}, {"productId": 2, "qty": 3, "unitType": "carton", "price": 17}, {"productId": 3, "qty": 10, "unitType": "carton", "price": 15}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 15}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 17, "date": "2026-01-18", "customerId": 17, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 18, "date": "2026-01-19", "customerId": 18, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 19, "date": "2026-01-19", "customerId": 19, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 20, "date": "2026-01-22", "customerId": 21, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 21, "date": "2026-01-25", "customerId": 22, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 22, "date": "2026-01-25", "customerId": 25, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 10}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 14}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 14}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 14}], "paid": 1100, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 23, "date": "2026-01-28", "customerId": 26, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 24, "date": "2026-01-28", "customerId": 27, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 25, "date": "2026-01-28", "customerId": 28, "items": [{"productId": 1, "qty": 5, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 5, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 4, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 26, "date": "2026-01-30", "customerId": 13, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 27, "date": "2026-02-02", "customerId": 32, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 28, "date": "2026-02-05", "customerId": 33, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 29, "date": "2026-02-09", "customerId": 34, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 30, "date": "2026-02-09", "customerId": 35, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 11}], "paid": 250, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 31, "date": "2026-02-09", "customerId": 15, "items": [{"productId": 2, "qty": 10, "unitType": "box", "price": 19}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "לקחו 10 חבילות בשווי כולל 190"}, {"id": 32, "date": "2026-02-09", "customerId": 36, "items": [{"productId": 4, "qty": 1, "unitType": "carton", "price": 15.5}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 33, "date": "2026-02-10", "customerId": 37, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 34, "date": "2026-02-12", "customerId": 38, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 35, "date": "2026-02-12", "customerId": 40, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 36, "date": "2026-02-15", "customerId": 42, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 37, "date": "2026-02-15", "customerId": 43, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 38, "date": "2026-02-15", "customerId": 44, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 39, "date": "2026-02-15", "customerId": 45, "items": [{"productId": 3, "qty": 42, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 40, "date": "2026-02-16", "customerId": 46, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 41, "date": "2026-02-16", "customerId": 16, "items": [{"productId": 1, "qty": 5, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 42, "date": "2026-02-16", "customerId": 6, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 43, "date": "2026-02-16", "customerId": 47, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 10}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 44, "date": "2026-02-16", "customerId": 48, "items": [{"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 45, "date": "2026-02-17", "customerId": 49, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 47, "date": "2026-02-18", "customerId": 51, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 48, "date": "2026-02-22", "customerId": 53, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 49, "date": "2026-02-22", "customerId": 54, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 11}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 50, "date": "2026-02-22", "customerId": 55, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 51, "date": "2026-02-22", "customerId": 56, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "עדש סופק"}, {"id": 52, "date": "2026-02-22", "customerId": 57, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "קרטון של פחפח קודח"}, {"id": 53, "date": "2026-02-22", "customerId": 58, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 54, "date": "2026-02-23", "customerId": 60, "items": [{"productId": 3, "qty": 1, "unitType": "carton", "price": 14}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 55, "date": "2026-02-25", "customerId": 30, "items": [{"productId": 3, "qty": 10, "unitType": "carton", "price": 16}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 56, "date": "2026-02-25", "customerId": 61, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}];
+const DL=[{"id": 2, "name": "מוטי פרץ", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 3, "name": "חומרי בניין עין קיניא", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 6, "name": "אליאב חומרי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 8, "name": "בתיה קרית מלאכי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 11, "name": "סלמון גדרה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 13, "name": "שלומי אלעד", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 16, "name": "אסביט פתח תקווה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 19, "name": "חסונה לוד", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 20, "name": "מצפון כפר סבא", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 22, "name": "שירית חומרי בניין ג׳מבו קרית גת", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 31, "name": "עדנן חומרי בניין תל שבע", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 32, "name": "יהודה דוד חומרי בניין באר יעקב", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 35, "name": "יוסף חומרי בניין לבניין ומצרי מלט אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 36, "name": "אורלי אלונים חומרי בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 38, "name": "בני עידן 88 חומר בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 40, "name": "זולי מאש אור 2000 חומרי בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 42, "name": "סאעד שאהין סרסור לחומרי בניין כפר קאסם", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 43, "name": "סייף חומרי בניין כפר קאסם", "phone": "", "status": "פגישה", "followUp": "", "visits": []}, {"id": 44, "name": "בדיר מורסי חומרי בניין כפר קאסם", "phone": "", "status": "פגישה", "followUp": "", "visits": []}, {"id": 45, "name": "רמי ג׳וייס חומרי בניין ג׳לג׳וליה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 46, "name": "עבד חומרי בניין ע. קאסם טירה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 47, "name": "ג׳יהאד חומרי בניין טירה כול בוב לבניין ואינסטלציה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 48, "name": "מוחמד חמדאן חומרי בניין סנטר טירה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 49, "name": "סעיד ט.מ.א חומרי בניין כפר קאסם", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 50, "name": "לואי בית היבואן רהט", "phone": "", "status": "חדש", "followUp": "2026-02-22", "visits": []}, {"id": 51, "name": "שיטווי קיסר סנטר רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 52, "name": "חאלד חומרי בניין רויאל רהט", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 53, "name": "אשרף הברון חומרי בניין רהט", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 54, "name": "אמין לידר לקיה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 55, "name": "101 אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 57, "name": "מדגר חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 58, "name": "ניסן חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 59, "name": "סוהיל עולמי הבנייה רמלה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 61, "name": "סיוון חומרי בניין באר טוביה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 62, "name": "עידן א מלול באר טוביה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 63, "name": "המרכז לבניין רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 64, "name": "גבור בעיר איסמאיל רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 65, "name": "כאמל חומרי בניין דיאר רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 66, "name": "רעפת א.ע הפסגה טמבור רהט ר״ח אלסוק", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 67, "name": "ר.ח סנטר חומר בניין", "phone": "לקיה", "status": "חדש", "followUp": "", "visits": []}, {"id": 68, "name": "מנסור חומרי בניין לקיה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 69, "name": "אידריס אלניל סנטר חומרי בניין חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 70, "name": "אקרם אלנור חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 71, "name": "כול בו אחרים אור חומרי בניין חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 72, "name": "חומרי בניין עדן כסייפה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 73, "name": "דני את חיליק ראשל״צ אורלי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 74, "name": "אלברט חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}];
+const DE=[{"id": 1, "date": "2026-01-04", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 2, "date": "2025-12-28", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 3, "date": "2026-01-11", "category": "דלק", "amount": 400, "description": "", "invoiceImage": null, "paid": true}, {"id": 4, "date": "2026-01-20", "category": "הובלות", "amount": 750, "description": "", "invoiceImage": null, "paid": true}, {"id": 5, "date": "2025-12-14", "category": "הובלות", "amount": 1000, "description": "", "invoiceImage": null, "paid": true}, {"id": 6, "date": "2026-01-26", "category": "דלק", "amount": 422, "description": "", "invoiceImage": null, "paid": true}, {"id": 7, "date": "2026-01-26", "category": "אחר", "amount": 160, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 8, "date": "2026-02-04", "category": "דלק", "amount": 460, "description": "", "invoiceImage": null, "paid": true}, {"id": 9, "date": "2026-02-10", "category": "דלק", "amount": 450, "description": "", "invoiceImage": null, "paid": true}, {"id": 10, "date": "2026-02-12", "category": "אחר", "amount": 60, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 11, "date": "2026-02-15", "category": "אחר", "amount": 133, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 12, "date": "2026-02-16", "category": "דלק", "amount": 370, "description": "", "invoiceImage": null, "paid": true}, {"id": 13, "date": "2026-02-16", "category": "הובלות", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 14, "date": "2026-02-16", "category": "אחר", "amount": 350, "description": "מדבקות", "invoiceImage": null, "paid": true}, {"id": 15, "date": "2026-02-23", "category": "דלק", "amount": 300, "description": "", "invoiceImage": null, "paid": true}];
+const DO=[];
 
-    const defaultLeads = [
-      { id: 1, name: 'גת גבס', phone: '', status: 'חדש', followUp: '' },
-      { id: 2, name: 'מוטי פרץ', phone: '', status: 'חדש', followUp: '' },
-      { id: 3, name: 'חומרי בניין עין קיניא', phone: '', status: 'חדש', followUp: '' },
-      { id: 4, name: 'לזרי', phone: '', status: 'חדש', followUp: '' },
-      { id: 5, name: 'ארז חומרי בניין ראשון', phone: '', status: 'חדש', followUp: '' },
-      { id: 6, name: 'אליאב חומרי', phone: '', status: 'חדש', followUp: '' },
-      { id: 7, name: 'אומנות הגימור', phone: '', status: 'חדש', followUp: '' },
-      { id: 8, name: 'בתיה קרית מלאכי', phone: '', status: 'חדש', followUp: '' },
-      { id: 9, name: 'אדירם חומרי בניין', phone: '', status: 'חדש', followUp: '' },
-      { id: 10, name: 'עמינדב גדרה', phone: '', status: 'חדש', followUp: '' },
-      { id: 11, name: 'סלמון גדרה', phone: '', status: 'חדש', followUp: '' },
-      { id: 12, name: 'נתנאל נס ציונה', phone: '', status: 'חדש', followUp: '' },
-      { id: 13, name: 'שלומי אלעד', phone: '', status: 'חדש', followUp: '' },
-      { id: 14, name: 'לדארט', phone: '', status: 'חדש', followUp: '' },
-      { id: 15, name: 'סלמן רהט', phone: '', status: 'חדש', followUp: '' },
-      { id: 16, name: 'אסביט פתח תקווה', phone: '', status: 'חדש', followUp: '' },
-      { id: 17, name: 'אלפה טוס אשדוד', phone: '', status: 'חדש', followUp: '' },
-      { id: 18, name: 'אבי אדר קרית גת', phone: '', status: 'חדש', followUp: '' },
-      { id: 19, name: 'חסונה לוד', phone: '', status: 'חדש', followUp: '' },
-      { id: 20, name: 'מצפון כפר סבא', phone: '', status: 'חדש', followUp: '' },
-      { id: 21, name: 'כחלון קרית מלאכי', phone: '', status: 'חדש', followUp: '' },
-    ];
+// STORAGE & HELPERS
+function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const fmt=n=>`₪${(n||0).toLocaleString("he-IL",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
+const fmtD=d=>d?new Date(d+"T00:00:00").toLocaleDateString("he-IL"):"—";
+const nxId=a=>(a.length?Math.max(...a.map(x=>x.id))+1:1);
 
-    // Load/Save
-    function load(key, def) {
-      try {
-        const d = localStorage.getItem(key);
-        return d ? JSON.parse(d) : def;
-      } catch(e) { return def; }
+function calcItemTotal(item, products){
+  const p=products.find(x=>x.id===item.productId);
+  if(!p)return 0;
+  if(item.unitType==="box") return item.qty * item.price;
+  return item.qty * p.boxesPerCarton * item.price;
+}
+function calcSaleTotal(sale,prods){return sale.items.reduce((s,i)=>s+calcItemTotal(i,prods),0)}
+function calcVat(n){return Math.round(n*(1+VAT))}
+
+function sendWhatsApp(phone, text){
+  const p=phone.replace(/[^0-9]/g,"");
+  const intl=p.startsWith("0")?"972"+p.slice(1):p;
+  window.open(`https://wa.me/${intl}?text=${encodeURIComponent(text)}`,"_blank");
+}
+function sendEmail(to,subject,body){
+  window.open(`mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,"_blank");
+}
+
+// ============================================================
+// APP
+// ============================================================
+function App(){
+  const[tab,setTab]=useState("dashboard");
+  const[products,setProducts]=useState(()=>ld("vnb5_products",DP));
+  const[inventory,setInventory]=useState(()=>ld("vnb5_inventory",DI));
+  const[customers,setCustomers]=useState(()=>ld("vnb5_customers",DC));
+  const[sales,setSales]=useState(()=>ld("vnb5_sales",DS));
+  const[leads,setLeads]=useState(()=>ld("vnb5_leads",DL));
+  const[expenses,setExpenses]=useState(()=>ld("vnb5_expenses",DE));
+  const[orders,setOrders]=useState(()=>ld("vnb5_orders",DO));
+  const[modal,setModal]=useState(null);
+  const[editItem,setEditItem]=useState(null);
+  const[pp,setPp]=useState("month");
+
+  // Auto-save all
+  useEffect(()=>{sv("vnb5_products",products)},[products]);
+  useEffect(()=>{sv("vnb5_inventory",inventory)},[inventory]);
+  useEffect(()=>{sv("vnb5_customers",customers)},[customers]);
+  useEffect(()=>{sv("vnb5_sales",sales)},[sales]);
+  useEffect(()=>{sv("vnb5_leads",leads)},[leads]);
+  useEffect(()=>{sv("vnb5_expenses",expenses)},[expenses]);
+  useEffect(()=>{sv("vnb5_orders",orders)},[orders]);
+
+  // Auto daily backup
+  useEffect(()=>{
+    const today=new Date().toISOString().split("T")[0];
+    if(localStorage.getItem("vnb5_lb")!==today){
+      const b=ld("vnb5_bk",[]);
+      b.unshift({date:new Date().toISOString(),type:"auto",data:{products,inventory,customers,sales,leads,expenses,orders}});
+      while(b.length>7)b.pop();sv("vnb5_bk",b);localStorage.setItem("vnb5_lb",today);
     }
-    function save(key, data) {
-      try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
-    }
+  },[]);
 
-    // State
-    let products = load('vnb4_products', defaultProducts);
-    let customers = load('vnb4_customers', defaultCustomers);
-    let sales = load('vnb4_sales', defaultSales);
-    let leads = load('vnb4_leads', defaultLeads);
-    let expenses = load('vnb4_expenses', []);
-    let currentTab = 'dashboard';
-    let currentModal = null;
-    let editingItem = null;
+  // Follow-up reminders check
+  const reminders=useMemo(()=>{
+    const today=new Date().toISOString().split("T")[0];
+    const r=[];
+    leads.forEach(l=>{if(l.followUp&&l.followUp<=today)r.push({type:"lead",name:l.name,date:l.followUp})});
+    customers.forEach(c=>{if(c.visits&&c.visits.length>0){const last=c.visits[c.visits.length-1];if(last.nextVisit&&last.nextVisit<=today)r.push({type:"customer",name:c.name,date:last.nextVisit})}});
+    return r;
+  },[leads,customers]);
 
-    // Helpers
-    function fmt(n) { return '₪' + (n || 0).toLocaleString('he-IL', {maximumFractionDigits: 0}); }
-    
-    function calcSaleTotal(sale, withVat = true) {
-      let total = 0;
-      for (const item of (sale.items || [])) {
-        const p = products.find(x => x.id === item.productId);
-        if (p) total += item.cartons * p.boxesPerCarton * (item.price || p.pricePerBox);
-      }
-      return withVat ? total * (1 + VAT) : total;
-    }
+  const gc=id=>customers.find(c=>c.id===id);
+  const gp=id=>products.find(p=>p.id===id);
 
-    function getInventory() {
-      return products.map(p => {
-        const sold = sales.reduce((sum, s) => {
-          const item = (s.items || []).find(i => i.productId === p.id);
-          return sum + (item ? item.cartons : 0);
-        }, 0);
-        const current = (p.initialStock || 0) - sold;
-        return { ...p, sold, current, isLow: current <= p.minStock };
-      });
-    }
+  // Totals
+  const totBV=useMemo(()=>sales.reduce((s,sl)=>s+calcSaleTotal(sl,products),0),[sales,products]);
+  const totV=useMemo(()=>calcVat(totBV),[totBV]);
+  const unpaid=useMemo(()=>sales.filter(s=>s.status!=="שולם"),[sales]);
+  const unpaidT=useMemo(()=>unpaid.reduce((s,sl)=>{const t=calcVat(calcSaleTotal(sl,products));return s+t-(sl.paid||0)},0),[unpaid,products]);
 
-    // Render
-    function render() {
-      const inventory = getInventory();
-      const totalSales = sales.reduce((s, x) => s + calcSaleTotal(x, true), 0);
-      const totalNoVat = sales.reduce((s, x) => s + calcSaleTotal(x, false), 0);
-      const pendingSales = sales.filter(s => s.status !== 'שולם');
-      const totalPending = pendingSales.reduce((s, x) => s + calcSaleTotal(x, true) - (x.paid || 0), 0);
-      const lowStock = inventory.filter(p => p.isLow);
-      const totalExpenses = expenses.reduce((s, x) => s + (x.amount || 0), 0);
+  // Period profit
+  const pData=useMemo(()=>{
+    const now=new Date();
+    const fd=d=>{const dt=new Date(d);if(pp==="month")return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();return dt.getFullYear()===now.getFullYear()};
+    const pS=sales.filter(s=>fd(s.date));const pE=expenses.filter(e=>fd(e.date));
+    const rev=pS.reduce((s,sl)=>s+calcSaleTotal(sl,products),0);
+    const exp=pE.reduce((s,e)=>s+e.amount,0);
+    return{rev,exp,profit:rev-exp,margin:rev>0?((rev-exp)/rev*100):0};
+  },[sales,expenses,products,pp]);
 
-      let content = '';
-      
-      // Dashboard
-      if (currentTab === 'dashboard') {
-        content = `
-          <div class="card" style="background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.3);">
-            <div style="color: #f59e0b; font-size: 12px;">סה"כ מכירות (כולל מע"מ)</div>
-            <div style="color: white; font-size: 24px; font-weight: bold;">${fmt(totalSales)}</div>
-            <div style="color: #94a3b8; font-size: 12px;">לפני מע"מ: ${fmt(totalNoVat)}</div>
-          </div>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div class="card" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.3);">
-              <div style="color: #ef4444; font-size: 12px;">ממתין לתשלום</div>
-              <div style="color: white; font-size: 18px; font-weight: bold;">${fmt(totalPending)}</div>
-              <div style="color: #94a3b8; font-size: 11px;">${pendingSales.length} עסקאות</div>
-            </div>
-            <div class="card" style="background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.3);">
-              <div style="color: #a855f7; font-size: 12px;">לידים</div>
-              <div style="color: white; font-size: 18px; font-weight: bold;">${leads.length}</div>
-            </div>
-          </div>
+  // Stock from inventory
+  const stockData=useMemo(()=>products.map(p=>{
+    const pallets=inventory.find(i=>i.productId===p.id&&i.warehouse==="pallets")?.qty||0;
+    const cartons=inventory.find(i=>i.productId===p.id&&i.warehouse==="cartons")?.qty||0;
+    return{...p,pallets,cartons,low:cartons<p.minStock};
+  }),[products,inventory]);
 
-          ${lowStock.length > 0 ? `
-            <div class="card" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.3);">
-              <div style="color: #ef4444; font-weight: bold; margin-bottom: 8px;">⚠️ מלאי נמוך</div>
-              ${lowStock.map(p => `
-                <div style="display: flex; justify-content: space-between; background: rgba(51,65,85,0.3); padding: 8px; border-radius: 6px; margin-bottom: 4px;">
-                  <span style="color: white;">${p.name}</span>
-                  <span style="color: #ef4444;">${p.current} קרטונים</span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
+  const openEdit=(type,item)=>{setEditItem(item);setModal(type)};
+  const openNew=type=>{setEditItem(null);setModal(type)};
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button class="btn" onclick="openModal('sale')">+ מכירה</button>
-            <button class="btn btn-secondary" onclick="openModal('customer')">+ לקוח</button>
-          </div>
+  // Export/Import
+  const expD=()=>{
+    const d={products,inventory,customers,sales,leads,expenses,orders};
+    const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(b);
+    a.download=`vnb-backup-${new Date().toISOString().split("T")[0]}.json`;a.click();
+  };
+  const impD=e=>{
+    const f=e.target.files[0];if(!f)return;
+    if(!confirm("לטעון גיבוי? גיבוי נוכחי יישמר.")){e.target.value="";return}
+    const bk=ld("vnb5_bk",[]);bk.unshift({date:new Date().toISOString(),type:"pre-import",data:{products,inventory,customers,sales,leads,expenses,orders}});
+    while(bk.length>7)bk.pop();sv("vnb5_bk",bk);
+    const r=new FileReader();r.onload=ev=>{try{
+      const d=JSON.parse(ev.target.result);
+      if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
+      if(d.customers)setCustomers(d.customers);if(d.sales)setSales(d.sales);
+      if(d.leads)setLeads(d.leads);if(d.expenses)setExpenses(d.expenses);
+      if(d.orders)setOrders(d.orders||[]);
+      alert("נטען בהצלחה!");
+    }catch(err){alert("שגיאה")}};r.readAsText(f);e.target.value="";
+  };
+  const restoreB=idx=>{
+    const b=ld("vnb5_bk",[]);if(!b[idx])return;
+    if(!confirm(`לשחזר גיבוי מ-${new Date(b[idx].date).toLocaleString("he-IL")}?`))return;
+    const d=b[idx].data;
+    if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
+    if(d.customers)setCustomers(d.customers);if(d.sales)setSales(d.sales);
+    if(d.leads)setLeads(d.leads);if(d.expenses)setExpenses(d.expenses);
+    if(d.orders)setOrders(d.orders||[]);setModal(null);alert("שוחזר!");
+  };
 
-          <div class="card">
-            <div style="color: white; font-weight: bold; margin-bottom: 12px;">מכירות אחרונות</div>
-            ${sales.slice(-5).reverse().map(s => {
-              const c = customers.find(x => x.id === s.customerId);
-              return `
-                <div onclick="editSale(${s.id})" style="display: flex; justify-content: space-between; background: rgba(51,65,85,0.3); padding: 8px; border-radius: 6px; margin-bottom: 4px; cursor: pointer;">
-                  <div>
-                    <div style="color: white; font-size: 14px;">${c ? c.name : 'לקוח'}</div>
-                    <div style="color: #94a3b8; font-size: 11px;">${s.date}</div>
-                  </div>
-                  <div style="text-align: left;">
-                    <div style="color: #94a3b8; font-size: 11px;">${fmt(calcSaleTotal(s, false))}</div>
-                    <div style="color: #f59e0b; font-weight: bold;">${fmt(calcSaleTotal(s, true))}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
+  const tabs=[
+    {id:"dashboard",l:"ראשי",i:"🏠"},{id:"inventory",l:"מלאי",i:"📦"},
+    {id:"sales",l:"מכירות",i:"💰"},{id:"orders",l:"הזמנות",i:"📋"},
+    {id:"customers",l:"לקוחות",i:"👥"},{id:"leads",l:"לידים",i:"🎯"},
+    {id:"expenses",l:"הוצאות",i:"💳"},{id:"reports",l:"דוחות",i:"📊"},
+    {id:"settings",l:"הגדרות",i:"⚙️"},
+  ];
 
-      // Inventory
-      else if (currentTab === 'inventory') {
-        content = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 style="color: white; font-size: 18px; font-weight: bold; margin: 0;">מלאי</h2>
-            <button class="btn" style="width: auto; padding: 8px 16px;" onclick="openModal('product')">+ מוצר</button>
-          </div>
-          ${inventory.map(p => `
-            <div class="card" onclick="editProduct(${p.id})" style="cursor: pointer; ${p.isLow ? 'border-color: rgba(239,68,68,0.5);' : ''}">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: white; font-weight: bold;">${p.name}</span>
-                ${p.isLow ? '<span style="color: #ef4444; font-size: 11px;">⚠️ נמוך</span>' : ''}
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; font-size: 12px;">
-                <div style="background: rgba(51,65,85,0.5); padding: 8px; border-radius: 6px;">
-                  <div style="color: #94a3b8;">התחלתי</div>
-                  <div style="color: white; font-weight: bold;">${p.initialStock}</div>
-                </div>
-                <div style="background: rgba(51,65,85,0.5); padding: 8px; border-radius: 6px;">
-                  <div style="color: #94a3b8;">נמכר</div>
-                  <div style="color: #f97316; font-weight: bold;">${p.sold}</div>
-                </div>
-                <div style="background: ${p.isLow ? 'rgba(239,68,68,0.2)' : 'rgba(51,65,85,0.5)'}; padding: 8px; border-radius: 6px;">
-                  <div style="color: #94a3b8;">נוכחי</div>
-                  <div style="color: ${p.isLow ? '#ef4444' : 'white'}; font-weight: bold;">${p.current}</div>
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        `;
-      }
+  // ======================== DASHBOARD ========================
+  const Dashboard=()=>{
+    const recent=[...sales].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+    return(<div className="fi">
+      {reminders.length>0&&<div className="card" style={{borderColor:"var(--warn)",marginBottom:8}}>
+        <div style={{fontWeight:700,color:"var(--warn)",marginBottom:4}}>🔔 תזכורות מעקב</div>
+        {reminders.map((r,i)=><div key={i} style={{fontSize:".78rem",padding:"2px 0"}}>
+          {r.type==="lead"?"🎯":"👥"} <strong>{r.name}</strong> — מעקב מ-{fmtD(r.date)}
+        </div>)}
+      </div>}
+      <div className="sc" style={{background:"linear-gradient(135deg,#1a2a1a,#1a1f2b)",marginBottom:8}}>
+        <div className="l">סה"כ מכירות (כולל מע"מ)</div>
+        <div className="v" style={{color:"var(--pri)"}}>{fmt(totV)}</div>
+        <div className="s">לפני מע"מ: {fmt(totBV)}</div>
+      </div>
+      <div className="g2" style={{marginBottom:8}}>
+        <div className="sc" style={{borderColor:"var(--pur)"}}><div className="l">לידים</div><div className="v" style={{color:"var(--pur)"}}>{leads.length}</div></div>
+        <div className="sc" style={{borderColor:"var(--dan)"}}><div className="l">ממתין לתשלום</div><div className="v" style={{color:"var(--dan)"}}>{fmt(unpaidT)}</div><div className="s">{unpaid.length} עסקאות</div></div>
+      </div>
+      <div className="g2" style={{marginBottom:8}}>
+        <div className="sc"><div className="l">הזמנות פתוחות</div><div className="v" style={{color:"var(--inf)"}}>{orders.filter(o=>o.status!=="סופק").length}</div></div>
+        <div className="sc"><div className="l">לקוחות</div><div className="v">{customers.length}</div></div>
+      </div>
+      <div className="g2" style={{marginBottom:12}}>
+        <button className="btn btn-o" style={{width:"100%"}} onClick={()=>openNew("customer")}>+ לקוח</button>
+        <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openNew("sale")}>+ מכירה</button>
+      </div>
+      {stockData.filter(s=>s.low).length>0&&<div className="card" style={{borderColor:"var(--dan)",marginBottom:8}}>
+        <div style={{fontWeight:700,color:"var(--dan)",marginBottom:4}}>⚠️ מלאי נמוך</div>
+        {stockData.filter(s=>s.low).map(s=><div key={s.id} style={{fontSize:".78rem",display:"flex",justifyContent:"space-between",padding:"2px 0"}}>
+          <span>{s.name}</span><span style={{color:"var(--dan)",fontWeight:700}}>{s.cartons} קרטונים</span>
+        </div>)}
+      </div>}
+      <h3 style={{fontWeight:700,marginBottom:6,fontSize:".9rem"}}>מכירות אחרונות</h3>
+      {recent.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
+        return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
+          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>{s.date}</div></div>
+          <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div><div style={{color:"var(--pri)",fontSize:".78rem"}}>{fmt(calcVat(t))}</div></div>
+        </div>)
+      })}
+    </div>);
+  };
 
-      // Sales
-      else if (currentTab === 'sales') {
-        content = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 style="color: white; font-size: 18px; font-weight: bold; margin: 0;">מכירות</h2>
-            <button class="btn" style="width: auto; padding: 8px 16px;" onclick="openModal('sale')">+ מכירה</button>
-          </div>
-
-          ${pendingSales.length > 0 ? `
-            <div class="card" style="background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.3);">
-              <div style="color: #f97316; font-weight: bold; margin-bottom: 8px;">ממתין לתשלום (${pendingSales.length}) - ${fmt(totalPending)}</div>
-              ${pendingSales.map(s => {
-                const c = customers.find(x => x.id === s.customerId);
-                const total = calcSaleTotal(s, true);
-                return `
-                  <div onclick="editSale(${s.id})" style="display: flex; justify-content: space-between; background: rgba(51,65,85,0.3); padding: 8px; border-radius: 6px; margin-bottom: 4px; cursor: pointer;">
-                    <span style="color: white;">${c ? c.name : 'לקוח'}</span>
-                    <span style="color: #f97316;">${fmt(total - (s.paid || 0))}</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          ` : ''}
-
-          <div style="max-height: 60vh; overflow-y: auto;">
-            ${sales.slice().reverse().map(s => {
-              const c = customers.find(x => x.id === s.customerId);
-              const totalNoVat = calcSaleTotal(s, false);
-              const total = calcSaleTotal(s, true);
-              return `
-                <div class="card" onclick="editSale(${s.id})" style="cursor: pointer;">
-                  <div style="display: flex; justify-content: space-between;">
-                    <div>
-                      <div style="color: white; font-weight: bold;">${c ? c.name : 'לקוח'}</div>
-                      <div style="color: #94a3b8; font-size: 11px;">${s.date}</div>
-                    </div>
-                    <div style="text-align: left;">
-                      <div style="color: #94a3b8; font-size: 11px;">לפני מע"מ: ${fmt(totalNoVat)}</div>
-                      <div style="color: #f59e0b; font-weight: bold;">${fmt(total)}</div>
-                      <span style="font-size: 10px; padding: 2px 8px; border-radius: 10px; ${s.status === 'שולם' ? 'background: rgba(16,185,129,0.2); color: #10b981;' : 'background: rgba(239,68,68,0.2); color: #ef4444;'}">${s.status}</span>
-                    </div>
-                  </div>
-                  ${s.status !== 'שולם' ? `<div style="color: #ef4444; font-size: 11px; margin-top: 4px;">יתרה: ${fmt(total - (s.paid || 0))}</div>` : ''}
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-
-      // Customers
-      else if (currentTab === 'customers') {
-        content = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 style="color: white; font-size: 18px; font-weight: bold; margin: 0;">לקוחות (${customers.length})</h2>
-            <button class="btn" style="width: auto; padding: 8px 16px;" onclick="openModal('customer')">+ לקוח</button>
-          </div>
-          <div style="max-height: 70vh; overflow-y: auto;">
-            ${customers.map(c => {
-              const customerSales = sales.filter(s => s.customerId === c.id);
-              const total = customerSales.reduce((sum, s) => sum + calcSaleTotal(s, true), 0);
-              return `
-                <div class="card" onclick="editCustomer(${c.id})" style="cursor: pointer;">
-                  <div style="display: flex; justify-content: space-between;">
-                    <div>
-                      <div style="color: white; font-weight: bold;">${c.name}</div>
-                      <div style="color: #94a3b8; font-size: 11px;">${c.phone || '-'} • ${c.address || '-'}</div>
-                      <div style="color: #64748b; font-size: 11px;">${customerSales.length} הזמנות</div>
-                    </div>
-                    <div style="color: #f59e0b; font-weight: bold;">${fmt(total)}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-
-      // Leads
-      else if (currentTab === 'leads') {
-        content = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 style="color: white; font-size: 18px; font-weight: bold; margin: 0;">לידים (${leads.length})</h2>
-            <button class="btn" style="width: auto; padding: 8px 16px;" onclick="openModal('lead')">+ ליד</button>
-          </div>
-          <div style="max-height: 70vh; overflow-y: auto;">
-            ${leads.map(l => `
-              <div class="card" onclick="editLead(${l.id})" style="cursor: pointer;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <div style="color: white; font-weight: bold;">${l.name}</div>
-                    ${l.phone ? `<div style="color: #94a3b8; font-size: 11px;">${l.phone}</div>` : ''}
-                  </div>
-                  <span style="font-size: 11px; padding: 4px 8px; border-radius: 10px; background: rgba(59,130,246,0.2); color: #3b82f6;">${l.status}</span>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      // Expenses
-      else if (currentTab === 'expenses') {
-        content = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 style="color: white; font-size: 18px; font-weight: bold; margin: 0;">הוצאות</h2>
-            <button class="btn" style="width: auto; padding: 8px 16px;" onclick="openModal('expense')">+ הוצאה</button>
-          </div>
-          <div class="card" style="background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.3);">
-            <div style="color: #ef4444; font-size: 12px;">סה"כ הוצאות</div>
-            <div style="color: white; font-size: 24px; font-weight: bold;">${fmt(totalExpenses)}</div>
-          </div>
-          ${expenses.length === 0 ? '<div style="color: #64748b; text-align: center; padding: 24px;">אין הוצאות</div>' : ''}
-          ${expenses.slice().reverse().map(e => `
-            <div class="card" onclick="editExpense(${e.id})" style="cursor: pointer;">
-              <div style="display: flex; justify-content: space-between;">
-                <div>
-                  <div style="color: white;">${e.description || e.category}</div>
-                  <div style="color: #94a3b8; font-size: 11px;">${e.date} • ${e.category}</div>
-                </div>
-                <div style="color: #ef4444; font-weight: bold;">${fmt(e.amount)}</div>
-              </div>
-            </div>
-          `).join('')}
-        `;
-      }
-
-      // Settings
-      else if (currentTab === 'settings') {
-        content = `
-          <h2 style="color: white; font-size: 18px; font-weight: bold; margin-bottom: 12px;">הגדרות</h2>
-          <div class="card">
-            <div style="color: #f59e0b; font-weight: bold; margin-bottom: 12px;">גיבוי</div>
-            <button class="btn" style="margin-bottom: 8px;" onclick="exportData()">📥 הורד גיבוי</button>
-            <label class="btn btn-secondary" style="display: block; text-align: center;">
-              📤 טען גיבוי
-              <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
-            </label>
-          </div>
-          <div class="card" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3);">
-            <button onclick="resetData()" style="width: 100%; background: #ef4444; color: white; font-weight: bold; padding: 12px; border-radius: 8px; border: none; cursor: pointer;">🗑️ מחק הכל</button>
-          </div>
-        `;
-      }
-
-      // Build page
-      document.getElementById('app').innerHTML = `
-        <header style="background: rgba(30,41,59,0.9); position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #334155; padding: 12px 16px;">
-          <div style="max-width: 500px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h1 style="color: #f59e0b; font-size: 20px; font-weight: bold; margin: 0;">VNB</h1>
-              <p style="color: #94a3b8; font-size: 11px; margin: 0;">גרינברג נירים</p>
-            </div>
-            <div style="text-align: left;">
-              <div style="color: #f59e0b; font-weight: bold;">${fmt(totalSales)}</div>
-              <div style="color: #94a3b8; font-size: 11px;">כולל מע"מ</div>
+  // ======================== INVENTORY ========================
+  const Inventory=()=>{
+    const[fl,setFl]=useState("all");
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>📦 מלאי</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("product")}>+ מוצר</button>
+      </div>
+      <div className="tb">{[["all","הכל"],["pallets","🏗️ משטחים"],["cartons","📦 קרטונים"]].map(([k,l])=>
+        <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
+      {stockData.map(p=>{
+        const showP=fl==="all"||fl==="pallets";const showC=fl==="all"||fl==="cartons";
+        return(<div className="card" key={p.id} style={{borderColor:p.low?"var(--dan)":"var(--brd)"}} onClick={()=>openEdit("product",p)}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontWeight:700}}>{p.name}</div>
+              <div style={{fontSize:".7rem",color:"var(--txt3)"}}>{p.boxesPerCarton} קופ'/קרטון | מכירה: {fmt(p.pricePerBox)} | עלות: {fmt(p.costPerBox)}</div>
             </div>
           </div>
-        </header>
-
-        <main style="max-width: 500px; margin: 0 auto; padding: 16px; padding-bottom: 100px;">
-          ${content}
-        </main>
-
-        <nav style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(30,41,59,0.95); border-top: 1px solid #334155; padding: 8px;">
-          <div style="max-width: 500px; margin: 0 auto; display: flex; justify-content: space-around;">
-            <div class="tab-btn ${currentTab === 'dashboard' ? 'active' : ''}" onclick="switchTab('dashboard')">
-              <span style="font-size: 20px;">🏠</span><span style="font-size: 10px;">ראשי</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'inventory' ? 'active' : ''}" onclick="switchTab('inventory')">
-              <span style="font-size: 20px;">📦</span><span style="font-size: 10px;">מלאי</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'sales' ? 'active' : ''}" onclick="switchTab('sales')">
-              <span style="font-size: 20px;">💰</span><span style="font-size: 10px;">מכירות</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'customers' ? 'active' : ''}" onclick="switchTab('customers')">
-              <span style="font-size: 20px;">👥</span><span style="font-size: 10px;">לקוחות</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'leads' ? 'active' : ''}" onclick="switchTab('leads')">
-              <span style="font-size: 20px;">🎯</span><span style="font-size: 10px;">לידים</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'expenses' ? 'active' : ''}" onclick="switchTab('expenses')">
-              <span style="font-size: 20px;">💸</span><span style="font-size: 10px;">הוצאות</span>
-            </div>
-            <div class="tab-btn ${currentTab === 'settings' ? 'active' : ''}" onclick="switchTab('settings')">
-              <span style="font-size: 20px;">⚙️</span><span style="font-size: 10px;">הגדרות</span>
-            </div>
+          <div className="g2" style={{marginTop:6}}>
+            {showP&&<div style={{background:"var(--bg)",padding:6,borderRadius:8,textAlign:"center"}}>
+              <div style={{fontSize:".68rem",color:"var(--txt3)"}}>🏗️ משטחים</div>
+              <div style={{fontWeight:800,fontSize:"1.1rem",color:"var(--pur)"}}>{p.pallets}</div>
+            </div>}
+            {showC&&<div style={{background:"var(--bg)",padding:6,borderRadius:8,textAlign:"center"}}>
+              <div style={{fontSize:".68rem",color:"var(--txt3)"}}>📦 קרטונים</div>
+              <div style={{fontWeight:800,fontSize:"1.1rem",color:p.low?"var(--dan)":"var(--suc)"}}>{p.cartons}</div>
+            </div>}
           </div>
-        </nav>
+          {p.low&&<div style={{marginTop:4,fontSize:".72rem",color:"var(--dan)",fontWeight:600}}>⚠️ מלאי נמוך! (מינימום: {p.minStock})</div>}
+        </div>)
+      })}
+    </div>);
+  };
 
-        ${currentModal ? renderModal() : ''}
-      `;
-    }
-
-    function renderModal() {
-      let title = '';
-      let body = '';
-
-      if (currentModal === 'sale') {
-        title = editingItem ? 'עריכת מכירה' : 'מכירה חדשה';
-        const sale = editingItem || { date: new Date().toISOString().split('T')[0], customerId: '', items: [], paid: 0, status: 'ממתין', notes: '' };
-        body = `
-          <input type="date" class="input" id="saleDate" value="${sale.date}">
-          <select class="input" id="saleCustomer">
-            <option value="">בחר לקוח</option>
-            ${customers.map(c => `<option value="${c.id}" ${sale.customerId == c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-          </select>
-          <div style="margin-bottom: 8px;">
-            <input type="text" class="input" id="newCustomerName" placeholder="או הוסף לקוח חדש..." style="margin-bottom: 4px;">
-            <button class="btn btn-secondary" style="font-size: 12px; padding: 8px;" onclick="addNewCustomerInSale()">+ הוסף לקוח</button>
+  // ======================== SALES ========================
+  const Sales=()=>{
+    const[sr,setSr]=useState("");const[fl,setFl]=useState("all");const[docFl,setDocFl]=useState("all");
+    const sorted=useMemo(()=>{
+      let r=[...sales].sort((a,b)=>b.date.localeCompare(a.date));
+      if(fl==="paid")r=r.filter(s=>s.status==="שולם");
+      if(fl==="unpaid")r=r.filter(s=>s.status!=="שולם");
+      if(fl==="partial")r=r.filter(s=>s.status==="חלקי");
+      if(docFl!=="all")r=r.filter(s=>s.docType===docFl);
+      if(sr)r=r.filter(s=>{const c=gc(s.customerId);return c?.name.includes(sr)});
+      return r;
+    },[sales,sr,fl,docFl]);
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>💰 מכירות ({sales.length})</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("sale")}>+ מכירה</button>
+      </div>
+      <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש לקוח..."/><span className="ic">🔍</span></div>
+      <div className="tb">{[["all","הכל"],["unpaid","ממתין"],["partial","חלקי"],["paid","שולם"]].map(([k,l])=>
+        <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
+      <div className="tb" style={{marginBottom:8}}>{[["all","כל המסמכים"],["חשבונית","חשבונית"],["קבלה","קבלה"],["תעודת משלוח","ת.משלוח"]].map(([k,l])=>
+        <button key={k} className={docFl===k?"a":""} onClick={()=>setDocFl(k)}>{l}</button>)}</div>
+      {sorted.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
+        return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
+          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
+            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{s.date}{s.docType&&s.docType!=="ללא"?` • ${s.docType}`:""}{s.notes?` • ${s.notes.slice(0,18)}`:""}</div></div>
+          <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div><div style={{color:"var(--pri)",fontSize:".78rem"}}>{fmt(calcVat(t))}</div>
+            <span className={`badge ${s.status==="שולם"?"b-s":s.status==="חלקי"?"b-w":"b-d"}`}>{s.status}</span>
           </div>
-          <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">מוצרים:</div>
-          ${products.map(p => {
-            const item = (sale.items || []).find(i => i.productId === p.id) || { cartons: 0, price: p.pricePerBox };
-            return `
-              <div style="background: rgba(51,65,85,0.5); padding: 8px; border-radius: 8px; margin-bottom: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span style="color: white; font-size: 14px;">${p.name}</span>
-                  <input type="number" min="0" class="input" style="width: 80px; margin: 0; text-align: center;" id="cartons_${p.id}" value="${item.cartons || ''}" placeholder="קרטונים">
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #94a3b8; font-size: 11px;">מחיר/קופסא:</span>
-                  <input type="number" step="0.5" class="input" style="width: 70px; margin: 0; text-align: center; font-size: 12px;" id="price_${p.id}" value="${item.price || p.pricePerBox}">
-                </div>
-              </div>
-            `;
-          }).join('')}
-          <input type="number" class="input" id="salePaid" value="${sale.paid || ''}" placeholder="סכום ששולם">
-          <select class="input" id="saleStatus">
-            <option value="ממתין" ${sale.status === 'ממתין' ? 'selected' : ''}>ממתין</option>
-            <option value="חלקי" ${sale.status === 'חלקי' ? 'selected' : ''}>חלקי</option>
-            <option value="שולם" ${sale.status === 'שולם' ? 'selected' : ''}>שולם</option>
-          </select>
-          <input type="text" class="input" id="saleNotes" value="${sale.notes || ''}" placeholder="הערות">
-          <button class="btn" onclick="saveSale()">שמור</button>
-          ${editingItem ? '<button class="btn btn-secondary" style="margin-top: 8px; background: rgba(239,68,68,0.2); color: #ef4444;" onclick="deleteSale()">מחק</button>' : ''}
-        `;
-      }
+        </div>)
+      })}
+      {sorted.length===0&&<div className="emp">אין מכירות</div>}
+    </div>);
+  };
 
-      else if (currentModal === 'customer') {
-        title = editingItem ? 'עריכת לקוח' : 'לקוח חדש';
-        const c = editingItem || { name: '', phone: '', address: '', paymentTerms: 'מזומן' };
-        body = `
-          <input type="text" class="input" id="custName" value="${c.name}" placeholder="שם העסק">
-          <input type="text" class="input" id="custPhone" value="${c.phone || ''}" placeholder="טלפון">
-          <input type="text" class="input" id="custAddress" value="${c.address || ''}" placeholder="כתובת">
-          <select class="input" id="custPayment">
-            <option value="מזומן" ${c.paymentTerms === 'מזומן' ? 'selected' : ''}>מזומן</option>
-            <option value="שוטף+30" ${c.paymentTerms === 'שוטף+30' ? 'selected' : ''}>שוטף+30</option>
-            <option value="שוטף+60" ${c.paymentTerms === 'שוטף+60' ? 'selected' : ''}>שוטף+60</option>
-            <option value="צק" ${c.paymentTerms === 'צק' ? 'selected' : ''}>צ'ק</option>
-          </select>
-          <button class="btn" onclick="saveCustomer()">שמור</button>
-          ${editingItem ? '<button class="btn btn-secondary" style="margin-top: 8px; background: rgba(239,68,68,0.2); color: #ef4444;" onclick="deleteCustomer()">מחק</button>' : ''}
-        `;
-      }
+  // ======================== ORDERS ========================
+  const Orders=()=>{
+    const[fl,setFl]=useState("all");
+    const sorted=useMemo(()=>{
+      let r=[...orders].sort((a,b)=>b.date.localeCompare(a.date));
+      if(fl==="open")r=r.filter(o=>o.status!=="סופק");
+      if(fl==="done")r=r.filter(o=>o.status==="סופק");
+      return r;
+    },[orders,fl]);
+    const sb=s=>({"ממתין":"b-w","בהכנה":"b-i","נשלח":"b-p","סופק":"b-s"}[s]||"b-w");
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>📋 הזמנות ({orders.length})</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("order")}>+ הזמנה</button>
+      </div>
+      <div className="tb">{[["all","הכל"],["open","פתוחות"],["done","סופקו"]].map(([k,l])=>
+        <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
+      {sorted.map(o=>{const c=gc(o.customerId);const t=calcSaleTotal(o,products);
+        return(<div className="row" key={o.id} onClick={()=>openEdit("order",o)}>
+          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
+            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{o.date}{o.expectedDate?` • צפי: ${fmtD(o.expectedDate)}`:""}</div></div>
+          <div style={{textAlign:"left"}}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(t)}</div>
+            <span className={`badge ${sb(o.status)}`}>{o.status}</span></div>
+        </div>)
+      })}
+      {sorted.length===0&&<div className="emp">אין הזמנות</div>}
+    </div>);
+  };
 
-      else if (currentModal === 'lead') {
-        title = editingItem ? 'עריכת ליד' : 'ליד חדש';
-        const l = editingItem || { name: '', phone: '', status: 'חדש', followUp: '' };
-        body = `
-          <input type="text" class="input" id="leadName" value="${l.name}" placeholder="שם העסק">
-          <input type="text" class="input" id="leadPhone" value="${l.phone || ''}" placeholder="טלפון">
-          <select class="input" id="leadStatus">
-            <option value="חדש" ${l.status === 'חדש' ? 'selected' : ''}>חדש</option>
-            <option value="פנייה ראשונה" ${l.status === 'פנייה ראשונה' ? 'selected' : ''}>פנייה ראשונה</option>
-            <option value="פגישה" ${l.status === 'פגישה' ? 'selected' : ''}>פגישה</option>
-            <option value="הצעת מחיר" ${l.status === 'הצעת מחיר' ? 'selected' : ''}>הצעת מחיר</option>
-          </select>
-          <input type="date" class="input" id="leadFollowUp" value="${l.followUp || ''}" placeholder="תאריך פולואפ">
-          <button class="btn" onclick="saveLead()">שמור</button>
-          ${editingItem ? `
-            <button class="btn" style="margin-top: 8px; background: #10b981;" onclick="convertToCustomer()">🎉 הפוך ללקוח</button>
-            <button class="btn btn-secondary" style="margin-top: 8px; background: rgba(239,68,68,0.2); color: #ef4444;" onclick="deleteLead()">מחק</button>
-          ` : ''}
-        `;
-      }
-
-      else if (currentModal === 'expense') {
-        title = editingItem ? 'עריכת הוצאה' : 'הוצאה חדשה';
-        const e = editingItem || { date: new Date().toISOString().split('T')[0], category: 'דלק', amount: 0, description: '' };
-        body = `
-          <input type="date" class="input" id="expDate" value="${e.date}">
-          <select class="input" id="expCategory">
-            <option value="דלק" ${e.category === 'דלק' ? 'selected' : ''}>דלק</option>
-            <option value="הובלות" ${e.category === 'הובלות' ? 'selected' : ''}>הובלות</option>
-            <option value="אחסנה" ${e.category === 'אחסנה' ? 'selected' : ''}>אחסנה</option>
-            <option value="מכס" ${e.category === 'מכס' ? 'selected' : ''}>מכס</option>
-            <option value="אחר" ${e.category === 'אחר' ? 'selected' : ''}>אחר</option>
-          </select>
-          <input type="number" class="input" id="expAmount" value="${e.amount || ''}" placeholder="סכום">
-          <input type="text" class="input" id="expDesc" value="${e.description || ''}" placeholder="תיאור">
-          <button class="btn" onclick="saveExpense()">שמור</button>
-          ${editingItem ? '<button class="btn btn-secondary" style="margin-top: 8px; background: rgba(239,68,68,0.2); color: #ef4444;" onclick="deleteExpense()">מחק</button>' : ''}
-        `;
-      }
-
-      else if (currentModal === 'product') {
-        title = editingItem ? 'עריכת מוצר' : 'מוצר חדש';
-        const p = editingItem || { name: '', boxesPerCarton: 20, pricePerBox: 0, costPerBox: 0, initialStock: 0, minStock: 5 };
-        body = `
-          <input type="text" class="input" id="prodName" value="${p.name}" placeholder="שם המוצר">
-          <input type="number" class="input" id="prodBoxes" value="${p.boxesPerCarton}" placeholder="קופסאות בקרטון">
-          <input type="number" step="0.5" class="input" id="prodPrice" value="${p.pricePerBox}" placeholder="מחיר לקופסא">
-          <input type="number" step="0.5" class="input" id="prodCost" value="${p.costPerBox}" placeholder="עלות לקופסא">
-          <input type="number" class="input" id="prodStock" value="${p.initialStock}" placeholder="מלאי התחלתי">
-          <input type="number" class="input" id="prodMin" value="${p.minStock}" placeholder="מינימום להתראה">
-          <button class="btn" onclick="saveProduct()">שמור</button>
-          ${editingItem ? '<button class="btn btn-secondary" style="margin-top: 8px; background: rgba(239,68,68,0.2); color: #ef4444;" onclick="deleteProduct()">מחק</button>' : ''}
-        `;
-      }
-
-      return `
-        <div class="modal-overlay" onclick="closeModal()">
-          <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-              <h3 style="color: #f59e0b; font-size: 18px; font-weight: bold; margin: 0;">${title}</h3>
-              <button onclick="closeModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">×</button>
-            </div>
-            <div class="modal-body">${body}</div>
+  // ======================== CUSTOMERS ========================
+  const Customers=()=>{
+    const[sr,setSr]=useState("");const[cityFl,setCityFl]=useState("all");
+    const cities=useMemo(()=>{const s=new Set();customers.forEach(c=>{if(c.city)s.add(c.city)});return[...s].sort()},[customers]);
+    const filtered=useMemo(()=>{
+      let r=customers;
+      if(cityFl!=="all")r=r.filter(c=>c.city===cityFl);
+      if(sr)r=r.filter(c=>c.name.includes(sr));
+      return r;
+    },[customers,sr,cityFl]);
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>👥 לקוחות ({customers.length})</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("customer")}>+ לקוח</button>
+      </div>
+      <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש לקוח..."/><span className="ic">🔍</span></div>
+      {cities.length>0&&<div style={{marginBottom:8,overflowX:"auto",whiteSpace:"nowrap",display:"flex",gap:4}}>
+        <button className={`btn btn-sm ${cityFl==="all"?"btn-p":"btn-o"}`} onClick={()=>setCityFl("all")}>הכל</button>
+        {cities.map(c=><button key={c} className={`btn btn-sm ${cityFl===c?"btn-p":"btn-o"}`} onClick={()=>setCityFl(c)}>{c}</button>)}
+      </div>}
+      {filtered.map(c=>{
+        const cS=sales.filter(s=>s.customerId===c.id);
+        const total=cS.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0);
+        return(<div className="row" key={c.id} onClick={()=>openEdit("customer",c)}>
+          <div><div style={{fontWeight:600}}>{c.name}</div>
+            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{c.paymentTerms}{c.city?` • ${c.city}`:""}</div>
+            {c.visits&&c.visits.length>0&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(c.visits[c.visits.length-1].date)}</div>}
           </div>
+          <div style={{textAlign:"left"}}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(total)}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{cS.length} עסקאות</div></div>
+        </div>)
+      })}
+    </div>);
+  };
+
+  // ======================== LEADS ========================
+  const Leads=()=>{
+    const[sr,setSr]=useState("");
+    const filtered=leads.filter(l=>!sr||l.name.includes(sr));
+    const sc={"חדש":"b-i","פנייה ראשונה":"b-w","פגישה":"b-p","הצעת מחיר":"b-s","לקוח":"b-s"};
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>🎯 לידים ({leads.length})</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("lead")}>+ ליד</button>
+      </div>
+      <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש ליד..."/><span className="ic">🔍</span></div>
+      {filtered.map(l=><div className="row" key={l.id} onClick={()=>openEdit("lead",l)}>
+        <div><div style={{fontWeight:600,fontSize:".83rem"}}>{l.name}</div>
+          {l.followUp&&<div style={{fontSize:".65rem",color:"var(--warn)"}}>מעקב: {fmtD(l.followUp)}</div>}
+          {l.visits&&l.visits.length>0&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(l.visits[l.visits.length-1].date)}</div>}
         </div>
-      `;
-    }
+        <span className={`badge ${sc[l.status]||"b-i"}`}>{l.status}</span>
+      </div>)}
+    </div>);
+  };
 
-    // Actions
-    function switchTab(tab) { currentTab = tab; render(); }
-    function openModal(type) { currentModal = type; editingItem = null; render(); }
-    function closeModal() { currentModal = null; editingItem = null; render(); }
+  // ======================== EXPENSES ========================
+  const Expenses=()=>{
+    const[period,setPeriod]=useState("all");const now=new Date();
+    const filtered=useMemo(()=>{
+      if(period==="all")return expenses;
+      if(period==="month")return expenses.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+      return expenses.filter(e=>new Date(e.date).getFullYear()===now.getFullYear());
+    },[expenses,period]);
+    const total=filtered.reduce((s,e)=>s+e.amount,0);
+    const cats=useMemo(()=>{const m={};filtered.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1])},[filtered]);
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <h3 style={{fontWeight:700}}>💳 הוצאות</h3>
+        <button className="btn btn-p btn-sm" onClick={()=>openNew("expense")}>+ הוצאה</button>
+      </div>
+      <div className="tb">{[["all","הכל"],["month","חודשי"],["year","שנתי"]].map(([k,l])=>
+        <button key={k} className={period===k?"a":""} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
+      <div className="sc" style={{marginBottom:8}}><div className="l">סה"כ הוצאות</div><div className="v" style={{color:"var(--dan)"}}>{fmt(total)}</div></div>
+      {cats.length>0&&<div className="card">
+        <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>פילוח</div>
+        {cats.map(([cat,amt])=><div key={cat} style={{display:"flex",alignItems:"center",gap:5,marginBottom:4}}>
+          <span style={{fontSize:".75rem",width:55,flexShrink:0,color:"var(--txt2)"}}>{cat}</span>
+          <div className="prg" style={{flex:1}}><div className="f" style={{width:`${total>0?(amt/total*100):0}%`,background:"var(--pri)"}}/></div>
+          <span style={{fontSize:".75rem",fontWeight:600,width:50,textAlign:"left"}}>{fmt(amt)}</span>
+        </div>)}
+      </div>}
+      {[...filtered].sort((a,b)=>b.date.localeCompare(a.date)).map(e=><div className="row" key={e.id} onClick={()=>openEdit("expense",e)}>
+        <div><div style={{fontWeight:600,fontSize:".8rem"}}>{e.category}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{e.date}{e.description?` • ${e.description}`:""}</div></div>
+        <div style={{fontWeight:700,color:"var(--dan)"}}>{fmt(e.amount)}</div>
+      </div>)}
+    </div>);
+  };
 
-    function editSale(id) { editingItem = sales.find(s => s.id === id); currentModal = 'sale'; render(); }
-    function editCustomer(id) { editingItem = customers.find(c => c.id === id); currentModal = 'customer'; render(); }
-    function editLead(id) { editingItem = leads.find(l => l.id === id); currentModal = 'lead'; render(); }
-    function editExpense(id) { editingItem = expenses.find(e => e.id === id); currentModal = 'expense'; render(); }
-    function editProduct(id) { editingItem = products.find(p => p.id === id); currentModal = 'product'; render(); }
+  // ======================== REPORTS ========================
+  const Reports=()=>{
+    // Top customers
+    const topCust=useMemo(()=>{
+      const m={};sales.forEach(s=>{m[s.customerId]=(m[s.customerId]||0)+calcVat(calcSaleTotal(s,products))});
+      return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([id,total])=>({customer:gc(+id),total}));
+    },[sales,products]);
+    // Top products
+    const topProd=useMemo(()=>{
+      const m={};sales.forEach(s=>s.items.forEach(i=>{m[i.productId]=(m[i.productId]||0)+calcItemTotal(i,products)}));
+      return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([id,total])=>({product:gp(+id),total}));
+    },[sales,products]);
+    // Debts
+    const debts=useMemo(()=>{
+      const m={};sales.filter(s=>s.status!=="שולם").forEach(s=>{
+        const debt=calcVat(calcSaleTotal(s,products))-(s.paid||0);
+        m[s.customerId]=(m[s.customerId]||0)+debt;
+      });
+      return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([id,debt])=>({customer:gc(+id),debt}));
+    },[sales,products]);
+    return(<div className="fi">
+      <h3 style={{fontWeight:700,marginBottom:10}}>📊 דוחות</h3>
+      <div className="card"><div style={{fontWeight:700,marginBottom:6}}>🏆 לקוחות מובילים</div>
+        {topCust.map((r,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",fontSize:".82rem"}}>
+          <span>{i+1}. {r.customer?.name||"—"}</span><strong>{fmt(r.total)}</strong>
+        </div>)}
+      </div>
+      <div className="card"><div style={{fontWeight:700,marginBottom:6}}>📦 מוצרים מובילים</div>
+        {topProd.map((r,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",fontSize:".82rem"}}>
+          <span>{r.product?.name||"—"}</span><strong>{fmt(r.total)}</strong>
+        </div>)}
+      </div>
+      <div className="card" style={{borderColor:"var(--dan)"}}><div style={{fontWeight:700,marginBottom:6,color:"var(--dan)"}}>💸 דוח חובות</div>
+        {debts.length===0?<div className="emp">אין חובות</div>:
+        debts.map((r,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",fontSize:".82rem"}}>
+          <span>{r.customer?.name||"—"}</span><strong style={{color:"var(--dan)"}}>{fmt(r.debt)}</strong>
+        </div>)}
+      </div>
+    </div>);
+  };
 
-    function addNewCustomerInSale() {
-      const name = document.getElementById('newCustomerName').value.trim();
-      if (!name) return;
-      const id = Math.max(0, ...customers.map(c => c.id)) + 1;
-      customers.push({ id, name, phone: '', address: '', paymentTerms: 'מזומן' });
-      save('vnb4_customers', customers);
-      document.getElementById('saleCustomer').innerHTML += `<option value="${id}" selected>${name}</option>`;
-      document.getElementById('saleCustomer').value = id;
-      document.getElementById('newCustomerName').value = '';
-    }
+  // ======================== SETTINGS ========================
+  const Settings=()=>{
+    const ir=useRef(null);const bk=ld("vnb5_bk",[]);
+    return(<div className="fi">
+      <h3 style={{fontWeight:700,marginBottom:12}}>⚙️ הגדרות</h3>
+      <div className="card" style={{background:"linear-gradient(135deg,#1a2a1a,#1a1f2b)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:"1.2rem"}}>✅</span><div><div style={{fontWeight:700}}>שמירה אוטומטית</div><div style={{fontSize:".75rem",color:"var(--txt2)"}}>גיבוי יומי • 7 גרסאות</div></div></div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        <button className="btn btn-p" style={{width:"100%"}} onClick={expD}>💾 ייצוא גיבוי</button>
+        <button className="btn btn-o" style={{width:"100%"}} onClick={()=>ir.current?.click()}>📥 ייבוא גיבוי</button>
+        <input ref={ir} type="file" accept=".json" onChange={impD} style={{display:"none"}}/>
+      </div>
+      {bk.length>0&&<div className="card" style={{marginTop:8}}>
+        <div style={{fontWeight:600,marginBottom:4}}>🔄 גיבויים ({bk.length})</div>
+        {bk.map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:4,borderBottom:"1px solid var(--brd)"}}>
+          <div><div style={{fontSize:".75rem"}}>{b.type==="auto"?"🕐 אוטומטי":"🔄 לפני פעולה"}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{new Date(b.date).toLocaleString("he-IL")}</div></div>
+          <button className="btn btn-o btn-sm" onClick={()=>restoreB(i)}>שחזר</button>
+        </div>)}
+      </div>}
+      <div className="card" style={{marginTop:8}}>
+        <div style={{fontWeight:600,marginBottom:4}}>📊 סטטיסטיקות</div>
+        <div className="g2" style={{fontSize:".8rem"}}><div>מוצרים: <strong>{products.length}</strong></div><div>לקוחות: <strong>{customers.length}</strong></div><div>מכירות: <strong>{sales.length}</strong></div><div>הזמנות: <strong>{orders.length}</strong></div><div>לידים: <strong>{leads.length}</strong></div><div>הוצאות: <strong>{expenses.length}</strong></div></div>
+      </div>
+      <button className="btn btn-d" style={{width:"100%",marginTop:8}} onClick={()=>{
+        if(!confirm("למחוק הכל? גיבוי יישמר."))return;
+        const b=ld("vnb5_bk",[]);b.unshift({date:new Date().toISOString(),type:"pre-reset",data:{products,inventory,customers,sales,leads,expenses,orders}});sv("vnb5_bk",b);
+        ["vnb5_products","vnb5_inventory","vnb5_customers","vnb5_sales","vnb5_leads","vnb5_expenses","vnb5_orders"].forEach(k=>localStorage.removeItem(k));location.reload();
+      }}>🗑️ איפוס</button>
+    </div>);
+  };
 
-    function saveSale() {
-      const customerId = parseInt(document.getElementById('saleCustomer').value);
-      if (!customerId) return alert('בחר לקוח');
-      
-      const items = [];
-      for (const p of products) {
-        const cartons = parseInt(document.getElementById('cartons_' + p.id).value) || 0;
-        const price = parseFloat(document.getElementById('price_' + p.id).value) || p.pricePerBox;
-        if (cartons > 0) items.push({ productId: p.id, cartons, price });
-      }
-      if (items.length === 0) return alert('הוסף מוצרים');
-
-      const sale = {
-        id: editingItem ? editingItem.id : Math.max(0, ...sales.map(s => s.id)) + 1,
-        date: document.getElementById('saleDate').value,
-        customerId,
-        items,
-        paid: parseFloat(document.getElementById('salePaid').value) || 0,
-        status: document.getElementById('saleStatus').value,
-        notes: document.getElementById('saleNotes').value
-      };
-
-      if (editingItem) {
-        const idx = sales.findIndex(s => s.id === editingItem.id);
-        sales[idx] = sale;
+  // PRODUCT MODAL
+  const ProductModal=()=>{
+    const isE=!!editItem;
+    const orig=isE?products.find(p=>p.id===editItem.id):null;
+    const[f,sF]=useState(orig||{name:"",boxesPerCarton:20,pricePerBox:0,costPerBox:0,minStock:5});
+    const[pallets,setPallets]=useState(isE?(inventory.find(i=>i.productId===editItem.id&&i.warehouse==="pallets")?.qty||0):0);
+    const[cartons,setCartons]=useState(isE?(inventory.find(i=>i.productId===editItem.id&&i.warehouse==="cartons")?.qty||0):0);
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const save=()=>{
+      if(!f.name){alert("הכנס שם");return}
+      if(isE){
+        setProducts(p=>p.map(x=>x.id===editItem.id?{...f,id:editItem.id,boxesPerCarton:+f.boxesPerCarton,pricePerBox:+f.pricePerBox,costPerBox:+f.costPerBox,minStock:+f.minStock}:x));
+        setInventory(p=>p.map(i=>{
+          if(i.productId===editItem.id&&i.warehouse==="pallets")return{...i,qty:+pallets};
+          if(i.productId===editItem.id&&i.warehouse==="cartons")return{...i,qty:+cartons};
+          return i;
+        }));
       } else {
-        sales.push(sale);
+        const id=nxId(products);
+        setProducts(p=>[...p,{...f,id,boxesPerCarton:+f.boxesPerCarton,pricePerBox:+f.pricePerBox,costPerBox:+f.costPerBox,minStock:+f.minStock}]);
+        setInventory(p=>[...p,{productId:id,warehouse:"pallets",qty:+pallets},{productId:id,warehouse:"cartons",qty:+cartons}]);
       }
-      save('vnb4_sales', sales);
-      closeModal();
-    }
+      setModal(null);
+    };
+    const del=()=>{if(!confirm("למחוק מוצר?"))return;setProducts(p=>p.filter(x=>x.id!==editItem.id));setInventory(p=>p.filter(i=>i.productId!==editItem.id));setModal(null)};
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת מוצר":"מוצר חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="fg"><label>שם מוצר</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
+      <div className="g2">
+        <div className="fg"><label>קופסאות/קרטון</label><input type="number" value={f.boxesPerCarton} onChange={e=>u("boxesPerCarton",e.target.value)}/></div>
+        <div className="fg"><label>מינימום מלאי</label><input type="number" value={f.minStock} onChange={e=>u("minStock",e.target.value)}/></div>
+      </div>
+      <div className="g2">
+        <div className="fg"><label>מחיר מכירה/קופ'</label><input type="number" step="0.5" value={f.pricePerBox} onChange={e=>u("pricePerBox",e.target.value)}/></div>
+        <div className="fg"><label>עלות/קופ'</label><input type="number" step="0.5" value={f.costPerBox} onChange={e=>u("costPerBox",e.target.value)}/></div>
+      </div>
+      <div className="g2">
+        <div className="fg"><label>🏗️ משטחים</label><input type="number" value={pallets} onChange={e=>setPallets(e.target.value)}/></div>
+        <div className="fg"><label>📦 קרטונים</label><input type="number" value={cartons} onChange={e=>setCartons(e.target.value)}/></div>
+      </div>
+      <div style={{display:"flex",gap:6}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&<button className="btn btn-d" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
 
-    function deleteSale() {
-      if (!confirm('למחוק?')) return;
-      sales = sales.filter(s => s.id !== editingItem.id);
-      save('vnb4_sales', sales);
-      closeModal();
-    }
-
-    function saveCustomer() {
-      const name = document.getElementById('custName').value.trim();
-      if (!name) return alert('הכנס שם');
-      
-      const c = {
-        id: editingItem ? editingItem.id : Math.max(0, ...customers.map(x => x.id)) + 1,
-        name,
-        phone: document.getElementById('custPhone').value,
-        address: document.getElementById('custAddress').value,
-        paymentTerms: document.getElementById('custPayment').value
-      };
-
-      if (editingItem) {
-        const idx = customers.findIndex(x => x.id === editingItem.id);
-        customers[idx] = c;
-      } else {
-        customers.push(c);
-      }
-      save('vnb4_customers', customers);
-      closeModal();
-    }
-
-    function deleteCustomer() {
-      if (!confirm('למחוק?')) return;
-      customers = customers.filter(c => c.id !== editingItem.id);
-      save('vnb4_customers', customers);
-      closeModal();
-    }
-
-    function saveLead() {
-      const name = document.getElementById('leadName').value.trim();
-      if (!name) return alert('הכנס שם');
-      
-      const l = {
-        id: editingItem ? editingItem.id : Math.max(0, ...leads.map(x => x.id)) + 1,
-        name,
-        phone: document.getElementById('leadPhone').value,
-        status: document.getElementById('leadStatus').value,
-        followUp: document.getElementById('leadFollowUp').value
-      };
-
-      if (editingItem) {
-        const idx = leads.findIndex(x => x.id === editingItem.id);
-        leads[idx] = l;
-      } else {
-        leads.push(l);
-      }
-      save('vnb4_leads', leads);
-      closeModal();
-    }
-
-    function deleteLead() {
-      if (!confirm('למחוק?')) return;
-      leads = leads.filter(l => l.id !== editingItem.id);
-      save('vnb4_leads', leads);
-      closeModal();
-    }
-
-    function convertToCustomer() {
-      const l = editingItem;
-      const id = Math.max(0, ...customers.map(c => c.id)) + 1;
-      customers.push({ id, name: l.name, phone: l.phone, address: '', paymentTerms: 'מזומן' });
-      leads = leads.filter(x => x.id !== l.id);
-      save('vnb4_customers', customers);
-      save('vnb4_leads', leads);
-      closeModal();
-      alert('הליד הפך ללקוח!');
-    }
-
-    function saveExpense() {
-      const amount = parseFloat(document.getElementById('expAmount').value);
-      if (!amount) return alert('הכנס סכום');
-      
-      const e = {
-        id: editingItem ? editingItem.id : Math.max(0, ...expenses.map(x => x.id)) + 1,
-        date: document.getElementById('expDate').value,
-        category: document.getElementById('expCategory').value,
-        amount,
-        description: document.getElementById('expDesc').value
-      };
-
-      if (editingItem) {
-        const idx = expenses.findIndex(x => x.id === editingItem.id);
-        expenses[idx] = e;
-      } else {
-        expenses.push(e);
-      }
-      save('vnb4_expenses', expenses);
-      closeModal();
-    }
-
-    function deleteExpense() {
-      if (!confirm('למחוק?')) return;
-      expenses = expenses.filter(e => e.id !== editingItem.id);
-      save('vnb4_expenses', expenses);
-      closeModal();
-    }
-
-    function saveProduct() {
-      const name = document.getElementById('prodName').value.trim();
-      if (!name) return alert('הכנס שם');
-      
-      const p = {
-        id: editingItem ? editingItem.id : Math.max(0, ...products.map(x => x.id)) + 1,
-        name,
-        boxesPerCarton: parseInt(document.getElementById('prodBoxes').value) || 20,
-        pricePerBox: parseFloat(document.getElementById('prodPrice').value) || 0,
-        costPerBox: parseFloat(document.getElementById('prodCost').value) || 0,
-        initialStock: parseInt(document.getElementById('prodStock').value) || 0,
-        minStock: parseInt(document.getElementById('prodMin').value) || 5
-      };
-
-      if (editingItem) {
-        const idx = products.findIndex(x => x.id === editingItem.id);
-        products[idx] = p;
-      } else {
-        products.push(p);
-      }
-      save('vnb4_products', products);
-      closeModal();
-    }
-
-    function deleteProduct() {
-      if (!confirm('למחוק?')) return;
-      products = products.filter(p => p.id !== editingItem.id);
-      save('vnb4_products', products);
-      closeModal();
-    }
-
-    function exportData() {
-      const data = { products, customers, sales, leads, expenses };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'vnb-backup.json';
-      a.click();
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = JSON.parse(e.target.result);
-          if (confirm('לטעון גיבוי? זה יחליף את כל הנתונים')) {
-            if (data.products) { products = data.products; save('vnb4_products', products); }
-            if (data.customers) { customers = data.customers; save('vnb4_customers', customers); }
-            if (data.sales) { sales = data.sales; save('vnb4_sales', sales); }
-            if (data.leads) { leads = data.leads; save('vnb4_leads', leads); }
-            if (data.expenses) { expenses = data.expenses; save('vnb4_expenses', expenses); }
-            render();
-            alert('נטען בהצלחה!');
-          }
-        } catch(err) {
-          alert('שגיאה בקריאת הקובץ');
+  // SALE MODAL
+  const SaleModal=()=>{
+    const isE=!!editItem;
+    const[f,sF]=useState(editItem||{date:new Date().toISOString().split("T")[0],customerId:"",items:[{productId:products[0]?.id||1,qty:1,unitType:"carton",price:products[0]?.pricePerBox||13}],paid:0,status:"ממתין",docType:"ללא",notes:""});
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const ui=(i,k,v)=>{const items=[...f.items];items[i]={...items[i],[k]:v};
+      if(k==="productId"){const p=products.find(x=>x.id===+v);if(p){items[i].price=p.pricePerBox}}
+      u("items",items)};
+    const total=f.items.reduce((s,i)=>s+calcItemTotal(i,products),0);
+    const cust=f.customerId?gc(+f.customerId):null;
+    const buildWAText=(docLabel)=>{
+      const c=cust;
+      let txt=`📄 *${docLabel}*\n*VNB*\n──────────\n`;
+      txt+=`לקוח: ${c?.name||""}\n`;
+      txt+=`תאריך: ${f.date}\n──────────\n`;
+      f.items.forEach(item=>{const p=gp(item.productId);
+        const unitLabel=item.unitType==="box"?"קופסאות":"קרטונים";
+        txt+=`• ${p?.name||""}\n  ${item.qty} ${unitLabel} × ${fmt(item.price)}/קופ' = ${fmt(calcItemTotal(item,products))}\n`});
+      txt+=`──────────\n`;
+      txt+=`סה"כ לפני מע"מ: ${fmt(total)}\n`;
+      txt+=`מע"מ (18%): ${fmt(calcVat(total)-total)}\n`;
+      txt+=`*סה"כ לתשלום: ${fmt(calcVat(total))}*\n`;
+      if(+f.paid>0)txt+=`שולם: ${fmt(+f.paid)}\nיתרה: ${fmt(calcVat(total)-+f.paid)}\n`;
+      if(f.notes)txt+=`\nהערות: ${f.notes}`;
+      txt+=`\n\n📞 VNB`;
+      return txt;
+    };
+    const shareDocWA=(docLabel)=>{
+      if(!cust?.phone){alert("אין טלפון ללקוח - עדכן בכרטיס הלקוח");return}
+      sendWhatsApp(cust.phone,buildWAText(docLabel));
+    };
+    const save=()=>{
+      if(!f.customerId){alert("בחר לקוח");return}
+      const data={...f,customerId:+f.customerId,paid:+f.paid,items:f.items.map(i=>({...i,qty:+i.qty,price:+i.price,productId:+i.productId}))};
+      if(isE)setSales(p=>p.map(s=>s.id===editItem.id?data:s));
+      else setSales(p=>[...p,{...data,id:nxId(p)}]);
+      // Auto WhatsApp when doc type set
+      if(data.docType&&data.docType!=="ללא"&&cust?.phone){
+        if(confirm(`לשלוח ${data.docType} ב-WhatsApp ל${cust.name}?`)){
+          sendWhatsApp(cust.phone,buildWAText(data.docType));
         }
-      };
-      reader.readAsText(file);
-    }
+      }
+      setModal(null);
+    };
+    const del=()=>{if(!confirm("למחוק?"))return;setSales(p=>p.filter(s=>s.id!==editItem.id));setModal(null)};
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת מכירה":"מכירה חדשה"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="g2">
+        <div className="fg"><label>תאריך</label><input type="date" value={f.date} onChange={e=>u("date",e.target.value)}/></div>
+        <div className="fg"><label>לקוח</label><select value={f.customerId} onChange={e=>u("customerId",e.target.value)}><option value="">בחר</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+      </div>
+      {cust&&!cust.phone&&<div style={{background:"#f59e0b22",padding:6,borderRadius:8,fontSize:".73rem",color:"var(--warn)",marginBottom:6}}>⚠️ ללקוח אין טלפון - <strong onClick={()=>{setEditItem(cust);setModal("customer")}} style={{cursor:"pointer",textDecoration:"underline"}}>עדכן כאן</strong></div>}
+      <div style={{fontWeight:600,marginBottom:4,fontSize:".83rem"}}>פריטים</div>
+      {f.items.map((item,i)=><div key={i} className="card" style={{padding:7,marginBottom:4}}>
+        <div className="g2" style={{marginBottom:4}}>
+          <div className="fg"><label>מוצר</label><select value={item.productId} onChange={e=>ui(i,"productId",+e.target.value)}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+          <div className="fg"><label>יחידה</label><select value={item.unitType||"carton"} onChange={e=>ui(i,"unitType",e.target.value)}><option value="carton">קרטון</option><option value="box">קופסה</option></select></div>
+        </div>
+        <div className="g2">
+          <div className="fg"><label>כמות</label><input type="number" value={item.qty} onChange={e=>ui(i,"qty",+e.target.value)}/></div>
+          <div className="fg"><label>מחיר/קופ'</label><input type="number" step="0.5" value={item.price} onChange={e=>ui(i,"price",+e.target.value)}/></div>
+        </div>
+        <div style={{fontSize:".72rem",color:"var(--txt2)"}}>סכום: {fmt(calcItemTotal(item,products))}</div>
+        {f.items.length>1&&<button className="btn btn-d btn-sm" style={{marginTop:2}} onClick={()=>u("items",f.items.filter((_,j)=>j!==i))}>הסר</button>}
+      </div>)}
+      <button className="btn btn-o btn-sm" style={{width:"100%",marginBottom:6}} onClick={()=>u("items",[...f.items,{productId:products[0]?.id||1,qty:1,unitType:"carton",price:products[0]?.pricePerBox||13}])}>+ פריט</button>
+      <div className="card" style={{padding:8,background:"var(--bg)",marginBottom:6,textAlign:"center"}}>
+        <strong>{fmt(total)}</strong> <span style={{color:"var(--pri)",fontSize:".8rem"}}>כולל מע"מ: {fmt(calcVat(total))}</span>
+      </div>
+      <div className="g3">
+        <div className="fg"><label>שולם</label><input type="number" value={f.paid} onChange={e=>u("paid",e.target.value)}/></div>
+        <div className="fg"><label>סטטוס</label><select value={f.status} onChange={e=>u("status",e.target.value)}><option>ממתין</option><option>חלקי</option><option>שולם</option></select></div>
+        <div className="fg"><label>מסמך</label><select value={f.docType||"ללא"} onChange={e=>u("docType",e.target.value)}>{DOC_TYPES.map(d=><option key={d}>{d}</option>)}</select></div>
+      </div>
+      <div className="fg"><label>הערות</label><input value={f.notes} onChange={e=>u("notes",e.target.value)}/></div>
+      {isE&&<div style={{display:"flex",gap:4,marginBottom:6,flexWrap:"wrap"}}>
+        <button className="btn btn-w btn-sm" onClick={()=>shareDocWA("חשבונית")}>📱 שלח חשבונית</button>
+        <button className="btn btn-w btn-sm" onClick={()=>shareDocWA("קבלה")}>📱 שלח קבלה</button>
+        <button className="btn btn-w btn-sm" onClick={()=>shareDocWA("תעודת משלוח")}>📱 ת.משלוח</button>
+        <button className="btn btn-w btn-sm" onClick={()=>shareDocWA("הצעת מחיר")}>📱 הצעת מחיר</button>
+      </div>}
+      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
 
-    function resetData() {
-      if (!confirm('למחוק את כל הנתונים?')) return;
-      localStorage.clear();
-      location.reload();
-    }
+  // ORDER MODAL
+  const OrderModal=()=>{
+    const isE=!!editItem;
+    const[f,sF]=useState(editItem||{date:new Date().toISOString().split("T")[0],customerId:"",items:[{productId:products[0]?.id||1,qty:1,unitType:"carton",price:products[0]?.pricePerBox||13}],status:"ממתין",expectedDate:"",notes:""});
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const ui=(i,k,v)=>{const items=[...f.items];items[i]={...items[i],[k]:v};u("items",items)};
+    const total=f.items.reduce((s,i)=>s+calcItemTotal(i,products),0);
+    const save=()=>{
+      if(!f.customerId){alert("בחר לקוח");return}
+      const data={...f,customerId:+f.customerId,items:f.items.map(i=>({...i,qty:+i.qty,price:+i.price,productId:+i.productId}))};
+      if(isE)setOrders(p=>p.map(o=>o.id===editItem.id?data:o));
+      else setOrders(p=>[...p,{...data,id:nxId(p)}]);
+      setModal(null);
+    };
+    const del=()=>{if(!confirm("למחוק?"))return;setOrders(p=>p.filter(o=>o.id!==editItem.id));setModal(null)};
+    const toSale=()=>{
+      if(!confirm("להמיר למכירה?"))return;
+      setSales(p=>[...p,{id:nxId(p),date:f.date,customerId:+f.customerId,items:f.items,paid:0,status:"ממתין",docType:"ללא",notes:"הומר מהזמנה"}]);
+      setOrders(p=>p.map(o=>o.id===editItem.id?{...o,status:"סופק"}:o));
+      setModal(null);
+    };
+    const shareWA=()=>{
+      const c=gc(+f.customerId);
+      if(!c?.phone){alert("אין טלפון ללקוח - עדכן בכרטיס הלקוח");return}
+      let txt=`📋 *הזמנה חדשה*\n*VNB*\n──────────\nלקוח: ${c?.name||""}\nתאריך: ${f.date}\n──────────\n`;
+      f.items.forEach(i=>{const p=gp(i.productId);txt+=`• ${p?.name||""}\n  ${i.qty} ${i.unitType==="box"?"קופסאות":"קרטונים"} × ${fmt(i.price)}/קופ'\n`});
+      txt+=`──────────\n*סה"כ: ${fmt(total)}*\n*כולל מע"מ: ${fmt(calcVat(total))}*`;
+      if(f.expectedDate)txt+=`\n📅 צפי אספקה: ${fmtD(f.expectedDate)}`;
+      if(f.notes)txt+=`\n📝 ${f.notes}`;
+      txt+=`\n\n📞 VNB`;
+      sendWhatsApp(c.phone,txt);
+    };
+    const shareEmail=()=>{
+      const c=gc(+f.customerId);
+      let body=`הזמנה - VNB\nלקוח: ${c?.name||""}\nתאריך: ${f.date}\n\n`;
+      f.items.forEach(i=>{const p=gp(i.productId);body+=`${p?.name||""} - ${i.qty} ${i.unitType==="box"?"קופסאות":"קרטונים"} × ${i.price}\n`});
+      body+=`\nסה"כ: ${fmt(total)} | כולל מע"מ: ${fmt(calcVat(total))}`;
+      sendEmail("",`הזמנה - ${c?.name||""} - VNB`,body);
+    };
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת הזמנה":"הזמנה חדשה"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="g2">
+        <div className="fg"><label>תאריך</label><input type="date" value={f.date} onChange={e=>u("date",e.target.value)}/></div>
+        <div className="fg"><label>לקוח</label><select value={f.customerId} onChange={e=>u("customerId",e.target.value)}><option value="">בחר</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+      </div>
+      <div style={{fontWeight:600,marginBottom:4,fontSize:".83rem"}}>פריטים</div>
+      {f.items.map((item,i)=><div key={i} className="card" style={{padding:7,marginBottom:4}}>
+        <div className="g3">
+          <div className="fg"><label>מוצר</label><select value={item.productId} onChange={e=>ui(i,"productId",+e.target.value)}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+          <div className="fg"><label>כמות</label><input type="number" value={item.qty} onChange={e=>ui(i,"qty",+e.target.value)}/></div>
+          <div className="fg"><label>מחיר</label><input type="number" step="0.5" value={item.price} onChange={e=>ui(i,"price",+e.target.value)}/></div>
+        </div>
+        {f.items.length>1&&<button className="btn btn-d btn-sm" onClick={()=>u("items",f.items.filter((_,j)=>j!==i))}>הסר</button>}
+      </div>)}
+      <button className="btn btn-o btn-sm" style={{width:"100%",marginBottom:6}} onClick={()=>u("items",[...f.items,{productId:products[0]?.id||1,qty:1,unitType:"carton",price:products[0]?.pricePerBox||13}])}>+ פריט</button>
+      <div className="g2">
+        <div className="fg"><label>סטטוס</label><select value={f.status} onChange={e=>u("status",e.target.value)}>{ORDER_STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
+        <div className="fg"><label>צפי אספקה</label><input type="date" value={f.expectedDate||""} onChange={e=>u("expectedDate",e.target.value)}/></div>
+      </div>
+      <div className="fg"><label>הערות</label><input value={f.notes||""} onChange={e=>u("notes",e.target.value)}/></div>
+      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&<button className="btn btn-w btn-sm" onClick={shareWA}>📱 WhatsApp</button>}
+        {isE&&<button className="btn btn-i btn-sm" onClick={shareEmail}>✉️ מייל</button>}
+        {isE&&f.status!=="סופק"&&<button className="btn btn-s btn-sm" onClick={toSale}>💰 המר למכירה</button>}
+        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
 
-    // Start
-    render();
-  </script>
+  // CUSTOMER MODAL
+  const CustModal=()=>{
+    const isE=!!editItem;
+    const[f,sF]=useState(editItem||{name:"",phone:"",city:"",address:"",paymentTerms:"מזומן",customPrices:{},visits:[]});
+    const[newVisit,setNewVisit]=useState({date:new Date().toISOString().split("T")[0],note:"",nextVisit:""});
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const custSales=isE?sales.filter(s=>s.customerId===editItem.id):[];
+    const prodPrices=useMemo(()=>{
+      const m={};custSales.forEach(s=>s.items.forEach(i=>{if(!m[i.productId])m[i.productId]=[];m[i.productId].push(i.price)}));
+      return Object.entries(m).map(([pid,prices])=>({product:gp(+pid),prices:[...new Set(prices)]}));
+    },[custSales]);
+    const save=()=>{if(!f.name){alert("הכנס שם");return}
+      if(isE)setCustomers(p=>p.map(c=>c.id===editItem.id?f:c));
+      else setCustomers(p=>[...p,{...f,id:nxId(p)}]);setModal(null)};
+    const del=()=>{if(!confirm("למחוק?"))return;setCustomers(p=>p.filter(c=>c.id!==editItem.id));setModal(null)};
+    const addVisit=()=>{
+      const visits=[...(f.visits||[]),{...newVisit}];u("visits",visits);
+      setNewVisit({date:new Date().toISOString().split("T")[0],note:"",nextVisit:""});
+    };
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת לקוח":"לקוח חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="fg"><label>שם</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
+      <div className="g2">
+        <div className="fg"><label>טלפון</label><input value={f.phone} onChange={e=>u("phone",e.target.value)}/></div>
+        <div className="fg"><label>תנאי תשלום</label><select value={f.paymentTerms} onChange={e=>u("paymentTerms",e.target.value)}><option>מזומן</option><option>צק</option><option>שוטף+30</option><option>שוטף+60</option><option>שוטף+90</option><option>העברה</option></select></div>
+      </div>
+      <div className="g2">
+        <div className="fg"><label>עיר</label><input value={f.city||""} onChange={e=>u("city",e.target.value)}/></div>
+        <div className="fg"><label>כתובת</label><input value={f.address||""} onChange={e=>u("address",e.target.value)}/></div>
+      </div>
+      {isE&&prodPrices.length>0&&<div className="card" style={{background:"var(--bg)"}}>
+        <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>💰 מחירים ללקוח</div>
+        {prodPrices.map((pp,i)=><div key={i} style={{fontSize:".78rem",display:"flex",justifyContent:"space-between",padding:"2px 0"}}>
+          <span>{pp.product?.name}</span><span style={{color:"var(--pri)"}}>{pp.prices.map(p=>fmt(p)).join(", ")}</span>
+        </div>)}
+      </div>}
+      {isE&&<div className="card" style={{background:"var(--bg)"}}>
+        <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>📅 ביקורים</div>
+        {(f.visits||[]).map((v,i)=><div key={i} className="visit-tag">{fmtD(v.date)}{v.note?` - ${v.note}`:""}</div>)}
+        <div className="g3" style={{marginTop:6}}>
+          <div className="fg"><label>תאריך</label><input type="date" value={newVisit.date} onChange={e=>setNewVisit(p=>({...p,date:e.target.value}))}/></div>
+          <div className="fg"><label>הערה</label><input value={newVisit.note} onChange={e=>setNewVisit(p=>({...p,note:e.target.value}))}/></div>
+          <div className="fg"><label>ביקור הבא</label><input type="date" value={newVisit.nextVisit} onChange={e=>setNewVisit(p=>({...p,nextVisit:e.target.value}))}/></div>
+        </div>
+        <button className="btn btn-o btn-sm" onClick={addVisit}>+ ביקור</button>
+      </div>}
+      {isE&&<div className="card" style={{background:"var(--bg)"}}>
+        <div style={{fontSize:".78rem",color:"var(--txt2)"}}>סה"כ עסקאות: {custSales.length} | סכום: {fmt(custSales.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0))}</div>
+      </div>}
+      <div style={{display:"flex",gap:5}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
+        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
+
+  // LEAD MODAL
+  const LeadModal=()=>{
+    const isE=!!editItem;
+    const[f,sF]=useState(editItem||{name:"",phone:"",status:"חדש",followUp:"",visits:[]});
+    const[newVisit,setNewVisit]=useState({date:new Date().toISOString().split("T")[0],note:""});
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const save=()=>{if(!f.name){alert("הכנס שם");return}
+      if(isE)setLeads(p=>p.map(l=>l.id===editItem.id?f:l));
+      else setLeads(p=>[...p,{...f,id:nxId(p)}]);setModal(null)};
+    const del=()=>{if(!confirm("למחוק?"))return;setLeads(p=>p.filter(l=>l.id!==editItem.id));setModal(null)};
+    const toCust=()=>{
+      setCustomers(p=>[...p,{id:nxId(p),name:f.name,phone:f.phone||"",city:"",address:"",paymentTerms:"מזומן",customPrices:{},visits:f.visits||[]}]);
+      setLeads(p=>p.filter(l=>l.id!==editItem.id));setModal(null);alert("הפך ללקוח!");
+    };
+    const addVisit=()=>{
+      const visits=[...(f.visits||[]),{...newVisit}];u("visits",visits);
+      setNewVisit({date:new Date().toISOString().split("T")[0],note:""});
+    };
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת ליד":"ליד חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="fg"><label>שם</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
+      <div className="g2">
+        <div className="fg"><label>טלפון</label><input value={f.phone} onChange={e=>u("phone",e.target.value)}/></div>
+        <div className="fg"><label>סטטוס</label><select value={f.status} onChange={e=>u("status",e.target.value)}>{LEAD_STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
+      </div>
+      <div className="fg"><label>מעקב</label><input type="date" value={f.followUp||""} onChange={e=>u("followUp",e.target.value)}/></div>
+      {isE&&<div className="card" style={{background:"var(--bg)"}}>
+        <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>📅 ביקורים</div>
+        {(f.visits||[]).map((v,i)=><div key={i} className="visit-tag">{fmtD(v.date)}{v.note?` - ${v.note}`:""}</div>)}
+        <div className="g2" style={{marginTop:6}}>
+          <div className="fg"><label>תאריך</label><input type="date" value={newVisit.date} onChange={e=>setNewVisit(p=>({...p,date:e.target.value}))}/></div>
+          <div className="fg"><label>הערה</label><input value={newVisit.note} onChange={e=>setNewVisit(p=>({...p,note:e.target.value}))}/></div>
+        </div>
+        <button className="btn btn-o btn-sm" onClick={addVisit}>+ ביקור</button>
+      </div>}
+      <div style={{display:"flex",gap:5}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&<button className="btn btn-s btn-sm" onClick={toCust}>👥 הפוך ללקוח</button>}
+        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
+
+  // EXPENSE MODAL
+  const ExpModal=()=>{
+    const isE=!!editItem;
+    const[f,sF]=useState(editItem||{date:new Date().toISOString().split("T")[0],category:"דלק",amount:0,description:"",invoiceImage:null,paid:true});
+    const u=(k,v)=>sF(p=>({...p,[k]:v}));
+    const save=()=>{if(!f.amount){alert("הכנס סכום");return}
+      if(isE)setExpenses(p=>p.map(e=>e.id===editItem.id?{...f,amount:+f.amount}:e));
+      else setExpenses(p=>[...p,{...f,id:nxId(p),amount:+f.amount}]);setModal(null)};
+    const del=()=>{if(!confirm("למחוק?"))return;setExpenses(p=>p.filter(e=>e.id!==editItem.id));setModal(null)};
+    const handleImg=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>u("invoiceImage",ev.target.result);r.readAsDataURL(file)};
+    return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
+      <h3>{isE?"עריכת הוצאה":"הוצאה חדשה"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      <div className="g2">
+        <div className="fg"><label>תאריך</label><input type="date" value={f.date} onChange={e=>u("date",e.target.value)}/></div>
+        <div className="fg"><label>קטגוריה</label><select value={f.category} onChange={e=>u("category",e.target.value)}>{ECATS.map(c=><option key={c}>{c}</option>)}</select></div>
+      </div>
+      <div className="g2">
+        <div className="fg"><label>סכום ₪</label><input type="number" value={f.amount} onChange={e=>u("amount",e.target.value)}/></div>
+        <div className="fg"><label>שולם</label><select value={f.paid?"כן":"לא"} onChange={e=>u("paid",e.target.value==="כן")}><option>כן</option><option>לא</option></select></div>
+      </div>
+      <div className="fg"><label>תיאור</label><input value={f.description||""} onChange={e=>u("description",e.target.value)}/></div>
+      <div className="fg"><label>חשבונית</label><input type="file" accept="image/*,.pdf" onChange={handleImg}/></div>
+      {f.invoiceImage&&<div style={{marginBottom:6,textAlign:"center"}}><img src={f.invoiceImage} style={{maxWidth:"100%",maxHeight:120,borderRadius:8}}/></div>}
+      <div style={{display:"flex",gap:5}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&<button className="btn btn-d" onClick={del}>🗑️</button>}
+      </div>
+    </div></div>);
+  };
+
+  // ======================== RENDER ========================
+  const isPos=pData.profit>=0;
+  return(<div>
+    <div className="hdr">
+      <div style={{textAlign:"right"}}><div style={{fontWeight:800,color:"var(--pri)",fontSize:"1.05rem"}}>VNB</div><div style={{fontSize:".62rem",color:"var(--txt3)"}}>VNB</div></div>
+      <div style={{textAlign:"left"}}><div style={{color:"var(--pri)",fontWeight:700,fontSize:".85rem"}}>{fmt(totV)}</div><div style={{fontSize:".62rem",color:"var(--txt3)"}}>כולל מע"מ</div></div>
+    </div>
+    <div className="pbar">
+      <div className="pt">
+        <button className={pp==="month"?"a":""} onClick={()=>setPp("month")}>חודשי</button>
+        <button className={pp==="year"?"a":""} onClick={()=>setPp("year")}>שנתי</button>
+      </div>
+      <span style={{color:"var(--txt2)"}}>הכנסות:</span><strong style={{color:"var(--suc)"}}>{fmt(pData.rev)}</strong>
+      <div className="sep"/>
+      <span style={{color:"var(--txt2)"}}>הוצאות:</span><strong style={{color:"var(--dan)"}}>{fmt(pData.exp)}</strong>
+      <div className="sep"/>
+      <span style={{color:"var(--txt2)"}}>רווח:</span>
+      <strong style={{color:isPos?"var(--suc)":"var(--dan)"}}>{isPos?"▲":"▼"}{fmt(Math.abs(pData.profit))}</strong>
+      <span className={`badge ${isPos?"b-s":"b-d"}`}>{pData.margin.toFixed(1)}%</span>
+    </div>
+    <div className="pg">
+      {tab==="dashboard"&&<Dashboard/>}
+      {tab==="inventory"&&<Inventory/>}
+      {tab==="sales"&&<Sales/>}
+      {tab==="orders"&&<Orders/>}
+      {tab==="customers"&&<Customers/>}
+      {tab==="leads"&&<Leads/>}
+      {tab==="expenses"&&<Expenses/>}
+      {tab==="reports"&&<Reports/>}
+      {tab==="settings"&&<Settings/>}
+    </div>
+    <div className="nav"><div className="nav-i">
+      {tabs.map(t=><button key={t.id} className={tab===t.id?"a":""} onClick={()=>setTab(t.id)}>
+        <span className="ic">{t.i}</span>{t.l}
+      </button>)}
+    </div></div>
+    {modal==="product"&&<ProductModal/>}
+    {modal==="sale"&&<SaleModal/>}
+    {modal==="order"&&<OrderModal/>}
+    {modal==="customer"&&<CustModal/>}
+    {modal==="lead"&&<LeadModal/>}
+    {modal==="expense"&&<ExpModal/>}
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
 </body>
 </html>
