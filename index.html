@@ -75,8 +75,8 @@ const LEAD_STATUSES=["חדש","פנייה ראשונה","פגישה","הצעת �
 
 // District auto-mapping
 const DISTRICT_MAP={
-"באר שבע":"דרום","אשקלון":"דרום","קרית גת":"דרום","אופקים":"דרום","נתיבות":"דרום","שדרות":"דרום","ערד":"דרום","דימונה":"דרום","אילת":"דרום","רהט":"דרום","חורה":"דרום","לקיה":"דרום","כסייפה":"דרום","תל שבע":"דרום","שגב שלום":"דרום","באר טוביה":"דרום","תל ערד":"דרום","מיתר":"דרום","ירוחם":"דרום",
-"תל אביב":"מרכז","ראשון לציון":"מרכז","פתח תקווה":"מרכז","בת ים":"מרכז","חולון":"מרכז","בני ברק":"מרכז","רמת גן":"מרכז","גבעתיים":"מרכז","הרצליה":"מרכז","רעננה":"מרכז","כפר סבא":"מרכז","נתניה":"מרכז","רמלה":"מרכז","לוד":"מרכז","נס ציונה":"מרכז","רחובות":"מרכז","יבנה":"מרכז","גדרה":"מרכז","באר יעקב":"מרכז","מודיעין":"מרכז",
+"באר שבע":"דרום","אשקלון":"דרום","קרית גת":"דרום","אופקים":"דרום","נתיבות":"דרום","שדרות":"דרום","ערד":"דרום","דימונה":"דרום","אילת":"דרום","רהט":"דרום","חורה":"דרום","לקיה":"דרום","כסייפה":"דרום","תל שבע":"דרום","שגב שלום":"דרום","באר טוביה":"דרום","תל ערד":"דרום","מיתר":"דרום","ירוחם":"דרום","אשדוד":"דרום","קרית מלאכי":"דרום",
+"תל אביב":"מרכז","ראשון לציון":"מרכז","פתח תקווה":"מרכז","בת ים":"מרכז","חולון":"מרכז","בני ברק":"מרכז","רמת גן":"מרכז","גבעתיים":"מרכז","הרצליה":"מרכז","רעננה":"מרכז","כפר סבא":"מרכז","נתניה":"מרכז","רמלה":"מרכז","לוד":"מרכז","נס ציונה":"מרכז","רחובות":"מרכז","יבנה":"מרכז","גדרה":"מרכז","באר יעקב":"מרכז","מודיעין":"מרכז","חולדה":"מרכז",
 "ירושלים":"ירושלים","בית שמש":"ירושלים","מבוא חורון":"ירושלים","מעלה אדומים":"ירושלים",
 "חיפה":"צפון","עכו":"צפון","נהריה":"צפון","כרמיאל":"צפון","טבריה":"צפון","נצרת":"צפון","עפולה":"צפון","מגדל העמק":"צפון","קרית שמונה":"צפון",
 "טירה":"שרון","כפר קאסם":"שרון","ג׳לג׳וליה":"שרון","קלנסווה":"שרון","הוד השרון":"שרון",
@@ -84,13 +84,13 @@ const DISTRICT_MAP={
 function getDistrict(city){if(!city)return"";const c=city.trim();return DISTRICT_MAP[c]||"אחר"}
 
 // DEFAULT DATA
-const DP=[{"id": 1, "name": "בורג גבס שחור שפיץ 35*2.5", "boxesPerCarton": 20, "pricePerBox": 13, "costPerBox": 6.5, "minStock": 5}, {"id": 2, "name": "בורג גבס שחור שפיץ 35*3.5", "boxesPerCarton": 16, "pricePerBox": 19, "costPerBox": 9.5, "minStock": 5}, {"id": 3, "name": "בורג פחפח שחור שפיץ 4.2*13", "boxesPerCarton": 20, "pricePerBox": 17, "costPerBox": 8.5, "minStock": 5}, {"id": 4, "name": "בורג עדש מגולוון  4.8*3.5", "boxesPerCarton": 16, "pricePerBox": 18, "costPerBox": 9, "minStock": 5}, {"name": "בורג גבס שחור שפיץ 45*3.5", "boxesPerCarton": 16, "pricePerBox": 12, "costPerBox": 0, "minStock": 5, "id": 5}, {"name": "בורג גבס שחור שפיץ 55*3.5", "boxesPerCarton": 16, "pricePerBox": 15, "costPerBox": 0, "minStock": 5, "id": 6}, {"name": "בורג גבס שחור קודח  25*35", "boxesPerCarton": 20, "pricePerBox": 15, "costPerBox": 0, "minStock": 5, "id": 7}, {"name": "בורג גבס שחור קודח 35*3.5", "boxesPerCarton": 16, "pricePerBox": 21, "costPerBox": 0, "minStock": 5, "id": 8}, {"name": "בורג פחפח שחור קודח 13*4.2", "boxesPerCarton": 20, "pricePerBox": 19, "costPerBox": 0, "minStock": 5, "id": 9}];
-const DI=[{"productId": 1, "warehouse": "pallets", "qty": 5}, {"productId": 1, "warehouse": "cartons", "qty": 102}, {"productId": 2, "warehouse": "pallets", "qty": 3}, {"productId": 2, "warehouse": "cartons", "qty": 62}, {"productId": 3, "warehouse": "pallets", "qty": 6}, {"productId": 3, "warehouse": "cartons", "qty": 126}, {"productId": 4, "warehouse": "pallets", "qty": 5}, {"productId": 4, "warehouse": "cartons", "qty": 108}, {"productId": 5, "warehouse": "pallets", "qty": 1}, {"productId": 5, "warehouse": "cartons", "qty": 0}, {"productId": 6, "warehouse": "pallets", "qty": 1}, {"productId": 6, "warehouse": "cartons", "qty": 0}, {"productId": 7, "warehouse": "pallets", "qty": 1}, {"productId": 7, "warehouse": "cartons", "qty": 0}, {"productId": 8, "warehouse": "pallets", "qty": 1}, {"productId": 8, "warehouse": "cartons", "qty": 0}, {"productId": 9, "warehouse": "pallets", "qty": 1}, {"productId": 9, "warehouse": "cartons", "qty": 0}];
+const DP=[{"id": 1, "name": "בורג גבס שחור שפיץ 35*2.5", "boxesPerCarton": 20, "pricePerBox": 13, "costPerBox": 6.5, "minStock": 5}, {"id": 2, "name": "בורג גבס שחור שפיץ 35*3.5", "boxesPerCarton": 16, "pricePerBox": 19, "costPerBox": 9.5, "minStock": 5}, {"id": 3, "name": "בורג פחפח שחור שפיץ 4.2*13", "boxesPerCarton": 20, "pricePerBox": 17, "costPerBox": 8.5, "minStock": 5}, {"id": 4, "name": "בורג עדש מגולוון  4.8*3.5", "boxesPerCarton": 16, "pricePerBox": 18, "costPerBox": 9, "minStock": 5}, {"id": 5, "name": "בורג גבס שחור שפיץ 45*3.5", "boxesPerCarton": 20, "pricePerBox": 12, "costPerBox": 0, "minStock": 5}, {"id": 6, "name": "בורג גבס שחור שפיץ 55*3.5", "boxesPerCarton": 16, "pricePerBox": 15, "costPerBox": 0, "minStock": 5}, {"id": 7, "name": "בורג גבס שחור קודח  25*35", "boxesPerCarton": 16, "pricePerBox": 15, "costPerBox": 0, "minStock": 5}, {"id": 8, "name": "בורג גבס שחור קודח 35*3.5", "boxesPerCarton": 16, "pricePerBox": 21, "costPerBox": 0, "minStock": 5}, {"id": 9, "name": "בורג פחפח שחור קודח 13*4.2", "boxesPerCarton": 16, "pricePerBox": 19, "costPerBox": 0, "minStock": 5}];
+const DI=[{"productId": 1, "warehouse": "pallets", "qty": 5}, {"productId": 1, "warehouse": "cartons", "qty": 102}, {"productId": 2, "warehouse": "pallets", "qty": 3}, {"productId": 2, "warehouse": "cartons", "qty": 62}, {"productId": 3, "warehouse": "pallets", "qty": 6}, {"productId": 3, "warehouse": "cartons", "qty": 126}, {"productId": 4, "warehouse": "pallets", "qty": 5}, {"productId": 4, "warehouse": "cartons", "qty": 108}, {"productId": 5, "warehouse": "pallets", "qty": 0}, {"productId": 5, "warehouse": "cartons", "qty": 41}, {"productId": 6, "warehouse": "pallets", "qty": 1}, {"productId": 6, "warehouse": "cartons", "qty": 0}, {"productId": 7, "warehouse": "pallets", "qty": 1}, {"productId": 7, "warehouse": "cartons", "qty": 40}, {"productId": 8, "warehouse": "pallets", "qty": 1}, {"productId": 8, "warehouse": "cartons", "qty": 0}, {"productId": 9, "warehouse": "pallets", "qty": 0}, {"productId": 9, "warehouse": "cartons", "qty": 40}];
 
 const DC=[{"id": 1, "name": "נור רחמים", "phone": "0506522207", "city": "רמלה", "address": "קלאוזנר 2", "paymentTerms": "שוטף+30", "customPrices": {}, "visits": []}, {"id": 2, "name": "אשל חומרי בניין", "phone": "+972 52-257-8401", "city": "רחובות", "address": "גורדסקי", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 3, "name": "סימן טוב חומרי בניין", "phone": "+972 52-605-7039", "city": "פתח תקווה", "address": "פתח תקווה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 4, "name": "אבו שושה חומרי בניין", "phone": "+972 53-225-5030", "city": "לוד", "address": "כצנלסון", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 5, "name": "אבידן בתי עץ", "phone": "+972 54-665-9664", "city": "חולדה", "address": "חולדה", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 6, "name": "אחים הרוש", "phone": "+972 50-872-6373", "city": "רמלה", "address": "רמלה", "paymentTerms": "צק", "customPrices": {}, "visits": []}, {"id": 7, "name": "עולם השלד", "phone": "+972 52-664-6655", "city": "חולון", "address": "חולון", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 8, "name": "פרימור ראשלצ", "phone": "+972 54-201-1207", "city": "ראשון לציון", "address": "דרך המכבים", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 9, "name": "זנו קרית מלאכי", "phone": "+972 50-200-2036", "city": "קרית מלאכי", "address": "פקר", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 10, "name": "עידן כחלון", "phone": "+972 52-521-4979", "city": "קרית מלאכי", "address": "פקר", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 11, "name": "בראשית גדרה", "phone": "+972 52-890-0343", "city": "גדרה", "address": "גדרה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 12, "name": "אחים ללזרי", "phone": "+972 53-771-8470", "city": "יבנה", "address": "יבנה", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 13, "name": "אדירים", "phone": "+972 50-407-5509", "city": "קרית מלאכי", "address": "פקר", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 14, "name": "אבו חיידר", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 15, "name": "בן ישי", "phone": "052-7501740", "city": "מודיעין", "address": "צומת שילת", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 16, "name": "אלפה טולס", "phone": "0542700276", "city": "אשדוד", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 17, "name": "נתנאל חומרי בניין", "phone": "052-6506543", "city": "נס ציונה", "address": "חרש", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 18, "name": "רוני אור - נס ציונה", "phone": "050-5234634", "city": "נס ציונה", "address": "חרש", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 19, "name": "א.א.ד חומרי בניין", "phone": "054-6437554", "city": "נס ציונה", "address": "נס ציונה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 21, "name": "שאקר חומרי בניין שגב שלום", "phone": "+972 53-455-5593", "city": "שגב שלום", "address": "שגב שלום", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 22, "name": "נתן טמבור תל אביב הגנה", "phone": "054-3386777", "city": "תל אביב", "address": "", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 23, "name": "מעוף סנטר ראשל״צ", "phone": "", "city": "ראשון לציון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 24, "name": "ניר אמסלם חומרי בניין ראשל״צ", "phone": "052-5955514", "city": "ראשון לציון", "address": "שדרות המכבים", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 25, "name": "מוחמד גואני תל ערד", "phone": "052-2683441", "city": "ערד", "address": "תל ערד", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 26, "name": "אבי אדר חומרי בניין קרית גת", "phone": "054-2660055", "city": "קרית גת", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 27, "name": "שלומי סנטר חומרי בניין", "phone": "050-9900942", "city": "קרית גת", "address": "", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 28, "name": "נאג׳ סאמרה חומרי בניין כסייפה", "phone": "052-2289165", "city": "כסייפה", "address": "כסייפה", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 30, "name": "מדינה נס ציונה", "phone": "+972 52-652-2225", "city": "נס ציונה", "address": "חרש", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 31, "name": "דני ובתיה ח׳ שיווק חגי קרית מלאכי", "phone": "050-7677743", "city": "קרית מלאכי", "address": "פקר", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 32, "name": "עומר הכל למסגר שגב שלום", "phone": "050-3234499", "city": "שגב שלום", "address": "", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 33, "name": "אומנות הגימור לוד", "phone": "", "city": "לוד", "address": "הצורפים", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 34, "name": "ספרדי הכל לבית נס ציונה", "phone": "052-4457704", "city": "נס ציונה", "address": "חרש", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 35, "name": "פארס סולטני חומרי בניין טירה", "phone": "050-5476228", "city": "טירה", "address": "טירה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 36, "name": "כל בן צבעים טהה כפר קאסם", "phone": "050-6616367", "city": "כפר קאסם", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 37, "name": "דהם אחים אבו סבית חורה", "phone": "054-9111200", "city": "חורה", "address": "חורה", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 38, "name": "יורם ביתן חומרי בניין אשקלון", "phone": "052-4491179", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 39, "name": "דור חומרי בניין אורלידור אספקה טכנית", "phone": "052-8519990", "city": "אשקלון", "address": "אשקלון", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 40, "name": "עולם הצנרת אשקלון", "phone": "", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 41, "name": "לדארט", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 42, "name": "מתי מרכז הגבס זנוח", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 43, "name": "שחר אלון אינסטלציה בית שמש", "phone": "", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 44, "name": "אחים וזנה חומרי בניין בית שמש", "phone": "", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 45, "name": "אלי מסלולים ניצב", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 46, "name": "ראובן בן הרוש", "phone": "", "city": "", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 47, "name": "מוטי רוטשילד חומרי בניין בתי ים", "phone": "054-7560670", "city": "בת ים", "address": "רוטשילד", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 48, "name": "אומנות הגימור רמלה", "phone": "050-9155107", "city": "רמלה", "address": "קלאוזנר", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 49, "name": "גל כהנא אחד לבניין מבוא חורון", "phone": "052-3795291", "city": "מבוא חורון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 50, "name": "דני עולם הצנרת", "phone": "050-6690038", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 51, "name": "איציק כל מתכת מדן אשקלון", "phone": "052-6894002", "city": "אשקלון", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 52, "name": "סלמן רהט לב העיר", "phone": "054-3460889", "city": "רהט", "address": "רהט", "paymentTerms": "שוטף+90", "customPrices": {}, "visits": []}, {"id": 53, "name": "ניהד א.נ חומרי בניין רהט", "phone": "053-7782926", "city": "רהט", "address": "רהט", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 54, "name": "עיסה נססרה מאסטר", "phone": "050-3003038", "city": "רהט", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 55, "name": "חמאיסה חומרי בניין בעיר", "phone": "054-3601647", "city": "רהט", "address": "רהט", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 56, "name": "ראאד חשמל הנמר חורה", "phone": "054-9384858", "city": "חורה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 57, "name": "יוסף אבו סבית חורה", "phone": "050-8522299", "city": "חורה", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 58, "name": "עדן א.ב.י קרית גת", "phone": "050-7474447", "city": "קרית גת", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 59, "name": "ניר דבש בת ים", "phone": "052-6404660", "city": "בת ים", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}, {"id": 60, "name": "מאור הבנאי מודיעין", "phone": "054-2268889", "city": "מודיעין", "address": "", "paymentTerms": "שוטף+60", "customPrices": {}, "visits": []}, {"id": 61, "name": "אור מתי מרכז הגבס בית שמש", "phone": "050-9905672", "city": "בית שמש", "address": "", "paymentTerms": "מזומן", "customPrices": {}, "visits": []}];
 const DS=[{"id": 1, "date": "2025-12-27", "customerId": 1, "items": [{"productId": 1, "qty": 6, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 3, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 9}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "קרטון מעורב לפרסום"}, {"id": 2, "date": "2025-12-27", "customerId": 2, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 6.5}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 3, "date": "2025-12-28", "customerId": 3, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 14}], "paid": 2900, "status": "שולם", "docType": "ללא", "notes": "ויקטור"}, {"id": 4, "date": "2025-12-29", "customerId": 4, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 17.5}], "paid": 1000, "status": "חלקי", "docType": "ללא", "notes": "יתרה 2160"}, {"id": 5, "date": "2025-12-30", "customerId": 5, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 6, "date": "2026-01-01", "customerId": 6, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 18}], "paid": 3785, "status": "שולם", "docType": "ללא", "notes": "שולם צ׳ק 28.2.26"}, {"id": 7, "date": "2026-01-07", "customerId": 7, "items": [{"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 4, "qty": 36, "unitType": "carton", "price": 15}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 8, "date": "2026-01-08", "customerId": 8, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 9, "date": "2026-01-09", "customerId": 9, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 1355, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 10, "date": "2026-01-09", "customerId": 10, "items": [{"productId": 1, "qty": 4, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 11, "date": "2026-01-09", "customerId": 11, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 1000, "status": "חלקי", "docType": "חשבונית", "notes": "היתרה 700"}, {"id": 12, "date": "2026-01-11", "customerId": 12, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 3, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 13, "date": "2026-01-13", "customerId": 13, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 14, "date": "2026-01-14", "customerId": 14, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 15, "date": "2026-01-13", "customerId": 15, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 16, "date": "2026-01-18", "customerId": 16, "items": [{"productId": 1, "qty": 10, "unitType": "carton", "price": 11}, {"productId": 2, "qty": 3, "unitType": "carton", "price": 17}, {"productId": 3, "qty": 10, "unitType": "carton", "price": 15}, {"productId": 4, "qty": 5, "unitType": "carton", "price": 15}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 17, "date": "2026-01-18", "customerId": 17, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 18, "date": "2026-01-19", "customerId": 18, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 19, "date": "2026-01-19", "customerId": 19, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "שולם", "docType": "חשבונית", "notes": ""}, {"id": 20, "date": "2026-01-22", "customerId": 21, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 21, "date": "2026-01-25", "customerId": 22, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 22, "date": "2026-01-25", "customerId": 25, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 10}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 14}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 14}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 14}], "paid": 1100, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 23, "date": "2026-01-28", "customerId": 26, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 24, "date": "2026-01-28", "customerId": 27, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 25, "date": "2026-01-28", "customerId": 28, "items": [{"productId": 1, "qty": 5, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 5, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 4, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 26, "date": "2026-01-30", "customerId": 13, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 27, "date": "2026-02-02", "customerId": 32, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 28, "date": "2026-02-05", "customerId": 33, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 29, "date": "2026-02-09", "customerId": 34, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 30, "date": "2026-02-09", "customerId": 35, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 11}], "paid": 250, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 31, "date": "2026-02-09", "customerId": 15, "items": [{"productId": 2, "qty": 10, "unitType": "box", "price": 19}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": "לקחו 10 חבילות בשווי כולל 190"}, {"id": 32, "date": "2026-02-09", "customerId": 36, "items": [{"productId": 4, "qty": 1, "unitType": "carton", "price": 15.5}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 33, "date": "2026-02-10", "customerId": 37, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 34, "date": "2026-02-12", "customerId": 38, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 35, "date": "2026-02-12", "customerId": 40, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 36, "date": "2026-02-15", "customerId": 42, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 37, "date": "2026-02-15", "customerId": 43, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 38, "date": "2026-02-15", "customerId": 44, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 2, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 2, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 39, "date": "2026-02-15", "customerId": 45, "items": [{"productId": 3, "qty": 42, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 40, "date": "2026-02-16", "customerId": 46, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 42, "date": "2026-02-16", "customerId": 6, "items": [{"productId": 1, "qty": 3, "unitType": "carton", "price": 13}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 44, "date": "2026-02-16", "customerId": 48, "items": [{"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 45, "date": "2026-02-17", "customerId": 49, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 48, "date": "2026-02-22", "customerId": 53, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 49, "date": "2026-02-22", "customerId": 54, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 11}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 50, "date": "2026-02-22", "customerId": 55, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 17}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}, {"id": 54, "date": "2026-02-23", "customerId": 60, "items": [{"productId": 3, "qty": 1, "unitType": "carton", "price": 14}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 55, "date": "2026-02-25", "customerId": 30, "items": [{"productId": 3, "qty": 10, "unitType": "carton", "price": 16}], "paid": 0, "status": "ממתין", "docType": "חשבונית", "notes": ""}, {"id": 57, "date": "2026-02-27", "customerId": 14, "items": [{"productId": 4, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 16}], "paid": 0, "status": "ממתין", "docType": "ללא", "notes": ""}, {"id": 59, "date": "2026-02-28", "customerId": 21, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "paid": 0, "status": "שולם", "docType": "ללא", "notes": ""}];
 const DL=[{"id": 2, "name": "מוטי פרץ", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 3, "name": "חומרי בניין עין קיניא", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 6, "name": "אליאב חומרי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 8, "name": "בתיה קרית מלאכי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 11, "name": "סלמון גדרה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 13, "name": "שלומי אלעד", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 16, "name": "אסביט פתח תקווה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 19, "name": "חסונה לוד", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 20, "name": "מצפון כפר סבא", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 22, "name": "שירית חומרי בניין ג׳מבו קרית גת", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 31, "name": "עדנן חומרי בניין תל שבע", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 32, "name": "יהודה דוד חומרי בניין באר יעקב", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 35, "name": "יוסף חומרי בניין לבניין ומצרי מלט אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 36, "name": "אורלי אלונים חומרי בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 38, "name": "בני עידן 88 חומר בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 40, "name": "זולי מאש אור 2000 חומרי בניין אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 42, "name": "סאעד שאהין סרסור לחומרי בניין כפר קאסם", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 43, "name": "סייף חומרי בניין כפר קאסם", "phone": "", "status": "פגישה", "followUp": "", "visits": []}, {"id": 44, "name": "בדיר מורסי חומרי בניין כפר קאסם", "phone": "", "status": "פגישה", "followUp": "", "visits": []}, {"id": 45, "name": "רמי ג׳וייס חומרי בניין ג׳לג׳וליה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 46, "name": "עבד חומרי בניין ע. קאסם טירה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 47, "name": "ג׳יהאד חומרי בניין טירה כול בוב לבניין ואינסטלציה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 48, "name": "מוחמד חמדאן חומרי בניין סנטר טירה", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 49, "name": "סעיד ט.מ.א חומרי בניין כפר קאסם", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 50, "name": "לואי בית היבואן רהט", "phone": "", "status": "חדש", "followUp": "2026-02-22", "visits": []}, {"id": 51, "name": "שיטווי קיסר סנטר רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 52, "name": "חאלד חומרי בניין רויאל רהט", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 53, "name": "אשרף הברון חומרי בניין רהט", "phone": "", "status": "פנייה ראשונה", "followUp": "", "visits": []}, {"id": 54, "name": "אמין לידר לקיה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 55, "name": "101 אשקלון", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 57, "name": "מדגר חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 58, "name": "ניסן חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 59, "name": "סוהיל עולמי הבנייה רמלה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 61, "name": "סיוון חומרי בניין באר טוביה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 62, "name": "עידן א מלול באר טוביה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 63, "name": "המרכז לבניין רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 64, "name": "גבור בעיר איסמאיל רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 65, "name": "כאמל חומרי בניין דיאר רהט", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 66, "name": "רעפת א.ע הפסגה טמבור רהט ר״ח אלסוק", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 67, "name": "ר.ח סנטר חומר בניין", "phone": "לקיה", "status": "חדש", "followUp": "", "visits": []}, {"id": 68, "name": "מנסור חומרי בניין לקיה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 69, "name": "אידריס אלניל סנטר חומרי בניין חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 70, "name": "אקרם אלנור חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 71, "name": "כול בו אחרים אור חומרי בניין חורה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 72, "name": "חומרי בניין עדן כסייפה", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 73, "name": "דני את חיליק ראשל״צ אורלי", "phone": "", "status": "חדש", "followUp": "", "visits": []}, {"id": 74, "name": "אלברט חומרי בניין בית שמש", "phone": "", "status": "חדש", "followUp": "", "visits": []}];
-const DE=[{"id": 1, "date": "2026-01-04", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 2, "date": "2025-12-28", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 3, "date": "2026-01-11", "category": "דלק", "amount": 400, "description": "", "invoiceImage": null, "paid": true}, {"id": 4, "date": "2026-01-20", "category": "הובלות", "amount": 750, "description": "", "invoiceImage": null, "paid": true}, {"id": 5, "date": "2025-12-14", "category": "הובלות", "amount": 1000, "description": "", "invoiceImage": null, "paid": true}, {"id": 6, "date": "2026-01-26", "category": "דלק", "amount": 422, "description": "", "invoiceImage": null, "paid": true}, {"id": 7, "date": "2026-01-26", "category": "אחר", "amount": 160, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 8, "date": "2026-02-04", "category": "דלק", "amount": 460, "description": "", "invoiceImage": null, "paid": true}, {"id": 9, "date": "2026-02-10", "category": "דלק", "amount": 450, "description": "", "invoiceImage": null, "paid": true}, {"id": 10, "date": "2026-02-12", "category": "אחר", "amount": 60, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 11, "date": "2026-02-15", "category": "אחר", "amount": 133, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 12, "date": "2026-02-16", "category": "דלק", "amount": 370, "description": "", "invoiceImage": null, "paid": true}, {"id": 13, "date": "2026-02-16", "category": "הובלות", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 14, "date": "2026-02-16", "category": "אחר", "amount": 350, "description": "מדבקות", "invoiceImage": null, "paid": true}, {"id": 15, "date": "2026-02-23", "category": "דלק", "amount": 300, "description": "", "invoiceImage": null, "paid": true}];
+const DE=[{"id": 1, "date": "2026-01-04", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 2, "date": "2025-12-28", "category": "דלק", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 3, "date": "2026-01-11", "category": "דלק", "amount": 400, "description": "", "invoiceImage": null, "paid": true}, {"id": 4, "date": "2026-01-20", "category": "הובלות", "amount": 750, "description": "", "invoiceImage": null, "paid": true}, {"id": 5, "date": "2025-12-14", "category": "הובלות", "amount": 1000, "description": "", "invoiceImage": null, "paid": true}, {"id": 6, "date": "2026-01-26", "category": "דלק", "amount": 422, "description": "", "invoiceImage": null, "paid": true}, {"id": 7, "date": "2026-01-26", "category": "אחר", "amount": 160, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 8, "date": "2026-02-04", "category": "דלק", "amount": 460, "description": "", "invoiceImage": null, "paid": true}, {"id": 9, "date": "2026-02-10", "category": "דלק", "amount": 450, "description": "", "invoiceImage": null, "paid": true}, {"id": 10, "date": "2026-02-12", "category": "אחר", "amount": 60, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 11, "date": "2026-02-15", "category": "אחר", "amount": 133, "description": "אוכל", "invoiceImage": null, "paid": true}, {"id": 12, "date": "2026-02-16", "category": "דלק", "amount": 370, "description": "", "invoiceImage": null, "paid": true}, {"id": 13, "date": "2026-02-16", "category": "הובלות", "amount": 500, "description": "", "invoiceImage": null, "paid": true}, {"id": 14, "date": "2026-02-16", "category": "אחר", "amount": 350, "description": "מדבקות", "invoiceImage": null, "paid": true}, {"id": 15, "date": "2026-02-23", "category": "דלק", "amount": 300, "description": "", "invoiceImage": null, "paid": true}, {"id": 16, "date": "2026-03-02", "category": "הובלות", "amount": 1000, "description": "", "invoiceImage": null, "paid": false}];
 const DO=[{"date": "2026-02-28", "customerId": 58, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 9, "qty": 1, "unitType": "carton", "price": 15}, {"productId": 5, "qty": 1, "unitType": "carton", "price": 12}], "status": "ממתין", "expectedDate": "2026-03-02", "notes": "", "id": 1}, {"date": "2026-02-28", "customerId": 16, "items": [{"productId": 1, "qty": 5, "unitType": "carton", "price": 11}, {"productId": 5, "qty": 3, "unitType": "carton", "price": 11}, {"productId": 6, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 9, "qty": 2, "unitType": "carton", "price": 17}, {"productId": 8, "qty": 1, "unitType": "carton", "price": 19}], "status": "ממתין", "expectedDate": "2026-03-02", "notes": "", "id": 2}, {"date": "2026-02-28", "customerId": 42, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 5, "qty": 1, "unitType": "carton", "price": 12}, {"productId": 7, "qty": 1, "unitType": "carton", "price": 15}, {"productId": 9, "qty": 1, "unitType": "carton", "price": 19}], "status": "ממתין", "expectedDate": "2026-03-03", "notes": "", "id": 3}, {"date": "2026-02-28", "customerId": 46, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}, {"productId": 5, "qty": 1, "unitType": "carton", "price": 12}, {"productId": 9, "qty": 1, "unitType": "carton", "price": 19}, {"productId": 7, "qty": 1, "unitType": "carton", "price": 15}], "status": "ממתין", "expectedDate": "2026-02-03", "notes": "", "id": 4}, {"date": "2026-02-28", "customerId": 7, "items": [{"productId": 5, "qty": 1, "unitType": "carton", "price": 15}, {"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 5, "qty": 1, "unitType": "carton", "price": 12}], "status": "ממתין", "expectedDate": "", "notes": "", "id": 5}, {"date": "2026-02-28", "customerId": 47, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "status": "ממתין", "expectedDate": "", "notes": "", "id": 6}, {"date": "2026-02-28", "customerId": 56, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}, {"productId": 4, "qty": 1, "unitType": "carton", "price": 18}], "status": "ממתין", "expectedDate": "2026-02-02", "notes": "עדש סופק ", "id": 7}, {"date": "2026-02-28", "customerId": 59, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}], "status": "ממתין", "expectedDate": "2026-02-04", "notes": "", "id": 8}, {"date": "2026-02-28", "customerId": 57, "items": [{"productId": 1, "qty": 2, "unitType": "carton", "price": 13}, {"productId": 3, "qty": 1, "unitType": "carton", "price": 17}], "status": "ממתין", "expectedDate": "2026-02-02", "notes": "", "id": 9}, {"date": "2026-02-28", "customerId": 51, "items": [{"productId": 1, "qty": 1, "unitType": "carton", "price": 13}, {"productId": 2, "qty": 1, "unitType": "carton", "price": 19}], "status": "ממתין", "expectedDate": "2026-02-02", "notes": "", "id": 10}];
 
 // STORAGE & HELPERS
@@ -123,33 +123,37 @@ function sendEmail(to,subject,body){
 // ============================================================
 function App(){
   const[tab,setTab]=useState("dashboard");
-  const[products,setProducts]=useState(()=>ld("vnb6_products",DP));
-  const[inventory,setInventory]=useState(()=>ld("vnb6_inventory",DI));
-  const[customers,setCustomers]=useState(()=>ld("vnb6_customers",DC));
-  const[sales,setSales]=useState(()=>ld("vnb6_sales",DS));
-  const[leads,setLeads]=useState(()=>ld("vnb6_leads",DL));
-  const[expenses,setExpenses]=useState(()=>ld("vnb6_expenses",DE));
-  const[orders,setOrders]=useState(()=>ld("vnb6_orders",DO));
+  const[products,setProducts]=useState(()=>ld("vnb7_products",DP));
+  const[inventory,setInventory]=useState(()=>ld("vnb7_inventory",DI));
+  const[customers,setCustomers]=useState(()=>ld("vnb7_customers",DC));
+  const[sales,setSales]=useState(()=>ld("vnb7_sales",DS));
+  const[leads,setLeads]=useState(()=>ld("vnb7_leads",DL));
+  const[expenses,setExpenses]=useState(()=>ld("vnb7_expenses",DE));
+  const[orders,setOrders]=useState(()=>ld("vnb7_orders",DO));
+  const[tasks,setTasks]=useState(()=>ld("vnb7_tasks",[]));
+  const[clusters,setClusters]=useState(()=>ld("vnb7_clusters",[{name:"פזורה",cities:["רהט","חורה","לקיה","כסייפה","שגב שלום","תל שבע","ערד"]},{name:"שפלה",cities:["רמלה","לוד","גדרה","יבנה","נס ציונה","רחובות","מודיעין","בית שמש"]}]));
   const[modal,setModal]=useState(null);
   const[editItem,setEditItem]=useState(null);
   const[pp,setPp]=useState("month");
 
   // Auto-save all
-  useEffect(()=>{sv("vnb6_products",products)},[products]);
-  useEffect(()=>{sv("vnb6_inventory",inventory)},[inventory]);
-  useEffect(()=>{sv("vnb6_customers",customers)},[customers]);
-  useEffect(()=>{sv("vnb6_sales",sales)},[sales]);
-  useEffect(()=>{sv("vnb6_leads",leads)},[leads]);
-  useEffect(()=>{sv("vnb6_expenses",expenses)},[expenses]);
-  useEffect(()=>{sv("vnb6_orders",orders)},[orders]);
+  useEffect(()=>{sv("vnb7_products",products)},[products]);
+  useEffect(()=>{sv("vnb7_inventory",inventory)},[inventory]);
+  useEffect(()=>{sv("vnb7_customers",customers)},[customers]);
+  useEffect(()=>{sv("vnb7_sales",sales)},[sales]);
+  useEffect(()=>{sv("vnb7_leads",leads)},[leads]);
+  useEffect(()=>{sv("vnb7_expenses",expenses)},[expenses]);
+  useEffect(()=>{sv("vnb7_orders",orders)},[orders]);
+  useEffect(()=>{sv("vnb7_tasks",tasks)},[tasks]);
+  useEffect(()=>{sv("vnb7_clusters",clusters)},[clusters]);
 
   // Auto daily backup
   useEffect(()=>{
     const today=new Date().toISOString().split("T")[0];
-    if(localStorage.getItem("vnb6_lb")!==today){
-      const b=ld("vnb6_bk",[]);
+    if(localStorage.getItem("vnb7_lb")!==today){
+      const b=ld("vnb7_bk",[]);
       b.unshift({date:new Date().toISOString(),type:"auto",data:{products,inventory,customers,sales,leads,expenses,orders}});
-      while(b.length>7)b.pop();sv("vnb6_bk",b);localStorage.setItem("vnb6_lb",today);
+      while(b.length>7)b.pop();sv("vnb7_bk",b);localStorage.setItem("vnb7_lb",today);
     }
   },[]);
 
@@ -201,8 +205,8 @@ function App(){
   const impD=e=>{
     const f=e.target.files[0];if(!f)return;
     if(!confirm("לטעון גיבוי? גיבוי נוכחי יישמר.")){e.target.value="";return}
-    const bk=ld("vnb6_bk",[]);bk.unshift({date:new Date().toISOString(),type:"pre-import",data:{products,inventory,customers,sales,leads,expenses,orders}});
-    while(bk.length>7)bk.pop();sv("vnb6_bk",bk);
+    const bk=ld("vnb7_bk",[]);bk.unshift({date:new Date().toISOString(),type:"pre-import",data:{products,inventory,customers,sales,leads,expenses,orders}});
+    while(bk.length>7)bk.pop();sv("vnb7_bk",bk);
     const r=new FileReader();r.onload=ev=>{try{
       const d=JSON.parse(ev.target.result);
       if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
@@ -213,7 +217,7 @@ function App(){
     }catch(err){alert("שגיאה")}};r.readAsText(f);e.target.value="";
   };
   const restoreB=idx=>{
-    const b=ld("vnb6_bk",[]);if(!b[idx])return;
+    const b=ld("vnb7_bk",[]);if(!b[idx])return;
     if(!confirm(`לשחזר גיבוי מ-${new Date(b[idx].date).toLocaleString("he-IL")}?`))return;
     const d=b[idx].data;
     if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
@@ -225,7 +229,8 @@ function App(){
   const tabs=[
     {id:"dashboard",l:"ראשי",i:"🏠"},{id:"inventory",l:"מלאי",i:"📦"},
     {id:"sales",l:"מכירות",i:"💰"},{id:"orders",l:"הזמנות",i:"📋"},
-    {id:"customers",l:"לקוחות",i:"👥"},{id:"leads",l:"לידים",i:"🎯"},
+    {id:"geo",l:"גיאוגרפי",i:"🗺️"},{id:"customers",l:"לקוחות",i:"👥"},
+    {id:"leads",l:"לידים",i:"🎯"},{id:"tasks",l:"משימות",i:"✅"},
     {id:"expenses",l:"הוצאות",i:"💳"},{id:"calendar",l:"יומן",i:"📅"},
     {id:"reports",l:"דוחות",i:"📊"},{id:"settings",l:"הגדרות",i:"⚙️"},
   ];
@@ -263,19 +268,38 @@ function App(){
           <span>{s.name}</span><span style={{color:"var(--dan)",fontWeight:700}}>{s.cartons} קרטונים</span>
         </div>)}
       </div>}
-      <h3 style={{fontWeight:700,marginBottom:6,fontSize:".9rem"}}>מכירות אחרונות</h3>
-      {recent.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
-        return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
-          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>{s.date}</div></div>
-          <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div><div style={{color:"var(--pri)",fontSize:".78rem"}}>{fmt(calcVat(t))}</div></div>
-        </div>)
-      })}
+      <h3 style={{fontWeight:700,marginBottom:6,fontSize:".9rem"}}>📅 אירועים להיום</h3>
+      {(()=>{const today=new Date().toISOString().split("T")[0];
+        const todayEvents=[];
+        orders.forEach(o=>{if(o.expectedDate===today&&o.status!=="סופק"){const c=gc(o.customerId);todayEvents.push({icon:"🚚",label:`אספקה: ${c?.name||"—"}`})}});
+        customers.forEach(c=>(c.visits||[]).forEach(v=>{if(v.date===today)todayEvents.push({icon:"👥",label:`ביקור: ${c.name}`});if(v.nextVisit===today)todayEvents.push({icon:"🔄",label:`ביקור הבא: ${c.name}`})}));
+        leads.forEach(l=>{(l.visits||[]).forEach(v=>{if(v.date===today)todayEvents.push({icon:"🎯",label:`ביקור ליד: ${l.name}`})});if(l.followUp===today)todayEvents.push({icon:"📞",label:`מעקב: ${l.name}`})});
+        tasks.filter(t=>!t.done&&t.date===today).forEach(t=>todayEvents.push({icon:"✅",label:t.text}));
+        return todayEvents.length>0?todayEvents.map((e,i)=><div key={i} style={{fontSize:".8rem",padding:"4px 0",borderBottom:"1px solid var(--brd)",display:"flex",gap:6}}><span>{e.icon}</span><span>{e.label}</span></div>):<div style={{fontSize:".8rem",color:"var(--txt3)"}}>אין אירועים להיום</div>
+      })()}
+      <h3 style={{fontWeight:700,marginBottom:6,marginTop:8,fontSize:".9rem"}}>✅ משימות פתוחות</h3>
+      {tasks.filter(t=>!t.done).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5).map(t=><div key={t.id} className="row" style={{padding:"4px 0"}} onClick={()=>setTab("tasks")}>
+        <div style={{fontSize:".8rem"}}>{t.text}</div>
+        <div style={{fontSize:".68rem",color:t.date<=new Date().toISOString().split("T")[0]?"var(--dan)":"var(--txt3)"}}>{fmtD(t.date)}</div>
+      </div>)}
+      {tasks.filter(t=>!t.done).length===0&&<div style={{fontSize:".8rem",color:"var(--txt3)"}}>אין משימות פתוחות</div>}
     </div>);
   };
 
   // ======================== INVENTORY ========================
   const Inventory=()=>{
     const[fl,setFl]=useState("all");
+    // Calculate sold per product from sales
+    const soldData=useMemo(()=>{
+      const m={};
+      sales.forEach(s=>s.items.forEach(i=>{
+        if(!m[i.productId])m[i.productId]=0;
+        const p=gp(i.productId);if(!p)return;
+        if(i.unitType==="box")m[i.productId]+=+i.qty;
+        else m[i.productId]+=(+i.qty)*(p.boxesPerCarton);
+      }));
+      return m;
+    },[sales,products]);
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <h3 style={{fontWeight:700}}>📦 מלאי</h3>
@@ -285,6 +309,8 @@ function App(){
         <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
       {stockData.map(p=>{
         const showP=fl==="all"||fl==="pallets";const showC=fl==="all"||fl==="cartons";
+        const soldBoxes=soldData[p.id]||0;
+        const soldCartons=p.boxesPerCarton>0?Math.floor(soldBoxes/p.boxesPerCarton):0;
         return(<div className="card" key={p.id} style={{borderColor:p.low?"var(--dan)":"var(--brd)"}} onClick={()=>openEdit("product",p)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><div style={{fontWeight:700}}>{p.name}</div>
@@ -301,7 +327,10 @@ function App(){
               <div style={{fontWeight:800,fontSize:"1.1rem",color:p.low?"var(--dan)":"var(--suc)"}}>{p.cartons}</div>
             </div>}
           </div>
-          {p.low&&<div style={{marginTop:4,fontSize:".72rem",color:"var(--dan)",fontWeight:600}}>⚠️ מלאי נמוך! (מינימום: {p.minStock})</div>}
+          <div style={{marginTop:4,fontSize:".72rem",color:"var(--txt2)",display:"flex",justifyContent:"space-between"}}>
+            <span>נמכרו: {soldCartons} קרטונים ({soldBoxes} קופ')</span>
+          </div>
+          {p.low&&<div style={{marginTop:2,fontSize:".72rem",color:"var(--dan)",fontWeight:600}}>⚠️ מלאי נמוך! (מינימום: {p.minStock})</div>}
         </div>)
       })}
     </div>);
@@ -491,6 +520,131 @@ function App(){
     </div>);
   };
 
+  // ======================== TASKS ========================
+  const Tasks=()=>{
+    const[newTask,setNewTask]=useState({text:"",date:new Date().toISOString().split("T")[0],done:false});
+    const addTask=()=>{if(!newTask.text.trim())return;setTasks(p=>[...p,{...newTask,id:nxId(p)}]);setNewTask({text:"",date:new Date().toISOString().split("T")[0],done:false})};
+    const toggle=(id)=>setTasks(p=>p.map(t=>t.id===id?{...t,done:!t.done}:t));
+    const delTask=(id)=>setTasks(p=>p.filter(t=>t.id!==id));
+    const open=tasks.filter(t=>!t.done).sort((a,b)=>a.date.localeCompare(b.date));
+    const done=tasks.filter(t=>t.done);
+    return(<div className="fi">
+      <h3 style={{fontWeight:700,marginBottom:8}}>✅ משימות ({open.length} פתוחות)</h3>
+      <div className="card" style={{padding:8,marginBottom:8}}>
+        <div className="g2">
+          <div className="fg"><label>משימה</label><input value={newTask.text} onChange={e=>setNewTask(p=>({...p,text:e.target.value}))} placeholder="למשל: להזמין משטח..."/></div>
+          <div className="fg"><label>תאריך</label><input type="date" value={newTask.date} onChange={e=>setNewTask(p=>({...p,date:e.target.value}))}/></div>
+        </div>
+        <button className="btn btn-p btn-sm" style={{width:"100%",marginTop:4}} onClick={addTask}>+ הוסף משימה</button>
+      </div>
+      {open.map(t=><div key={t.id} className="row" style={{borderColor:t.date<=new Date().toISOString().split("T")[0]?"var(--dan)":"var(--brd)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}} onClick={()=>toggle(t.id)}>
+          <span style={{fontSize:"1.2rem",cursor:"pointer"}}>{t.done?"✅":"⬜"}</span>
+          <div><div style={{fontWeight:600,fontSize:".82rem"}}>{t.text}</div>
+            <div style={{fontSize:".68rem",color:t.date<=new Date().toISOString().split("T")[0]?"var(--dan)":"var(--txt3)"}}>{fmtD(t.date)}</div></div>
+        </div>
+        <button className="btn btn-d btn-sm" onClick={()=>delTask(t.id)}>🗑️</button>
+      </div>)}
+      {done.length>0&&<details style={{marginTop:8}}><summary style={{fontSize:".8rem",color:"var(--txt3)",cursor:"pointer"}}>הושלמו ({done.length})</summary>
+        {done.map(t=><div key={t.id} className="row" style={{opacity:.5}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}} onClick={()=>toggle(t.id)}>
+            <span style={{fontSize:"1.2rem",cursor:"pointer"}}>✅</span>
+            <div style={{textDecoration:"line-through",fontSize:".82rem"}}>{t.text}</div>
+          </div>
+          <button className="btn btn-d btn-sm" onClick={()=>delTask(t.id)}>🗑️</button>
+        </div>)}
+      </details>}
+    </div>);
+  };
+
+  // ======================== GEO ========================
+  const Geo=()=>{
+    const[distFl,setDistFl]=useState("all");
+    const[cityFl,setCityFl]=useState("all");
+    const[clusterFl,setClusterFl]=useState("all");
+    const[editCluster,setEditCluster]=useState(null);
+    const[newClName,setNewClName]=useState("");
+    const[newClCities,setNewClCities]=useState("");
+
+    // All businesses (customers + leads combined)
+    const allBiz=useMemo(()=>{
+      const items=[];
+      customers.forEach(c=>items.push({...c,type:"customer",icon:"👥",typeName:"לקוח"}));
+      leads.forEach(l=>items.push({...l,type:"lead",icon:"🎯",typeName:"ליד"}));
+      return items;
+    },[customers,leads]);
+
+    const allCities=useMemo(()=>{const s=new Set();allBiz.forEach(b=>{if(b.city&&b.city.trim())s.add(b.city.trim())});return[...s].sort()},[allBiz]);
+    const allDistricts=useMemo(()=>{const s=new Set();allBiz.forEach(b=>{const d=getDistrict(b.city);if(d)s.add(d)});return[...s].sort()},[allBiz]);
+
+    const filtered=useMemo(()=>{
+      let r=allBiz;
+      if(clusterFl!=="all"){const cl=clusters.find(c=>c.name===clusterFl);if(cl)r=r.filter(b=>cl.cities.some(c=>b.city&&b.city.trim()===c))}
+      if(distFl!=="all")r=r.filter(b=>getDistrict(b.city)===distFl);
+      if(cityFl!=="all")r=r.filter(b=>b.city&&b.city.trim()===cityFl);
+      return r;
+    },[allBiz,distFl,cityFl,clusterFl,clusters]);
+
+    const filteredCities=useMemo(()=>{
+      if(distFl==="all"&&clusterFl==="all")return allCities;
+      let cities=allCities;
+      if(distFl!=="all")cities=cities.filter(c=>getDistrict(c)===distFl);
+      if(clusterFl!=="all"){const cl=clusters.find(x=>x.name===clusterFl);if(cl)cities=cities.filter(c=>cl.cities.includes(c))}
+      return cities;
+    },[allCities,distFl,clusterFl,clusters]);
+
+    const saveCluster=()=>{
+      if(!newClName.trim())return;
+      const cities=newClCities.split(",").map(c=>c.trim()).filter(Boolean);
+      if(editCluster!==null)setClusters(p=>p.map((c,i)=>i===editCluster?{name:newClName,cities}:c));
+      else setClusters(p=>[...p,{name:newClName,cities}]);
+      setEditCluster(null);setNewClName("");setNewClCities("");
+    };
+
+    return(<div className="fi">
+      <h3 style={{fontWeight:700,marginBottom:8}}>🗺️ תצוגה גיאוגרפית ({filtered.length})</h3>
+      {clusters.length>0&&<div style={{marginBottom:6,display:"flex",gap:4,flexWrap:"wrap"}}>
+        <span style={{fontSize:".7rem",color:"var(--txt3)",padding:"4px 0"}}>אשכול:</span>
+        <button className={`btn btn-sm ${clusterFl==="all"?"btn-p":"btn-o"}`} onClick={()=>{setClusterFl("all");setDistFl("all");setCityFl("all")}}>הכל</button>
+        {clusters.map(c=><button key={c.name} className={`btn btn-sm ${clusterFl===c.name?"btn-p":"btn-o"}`} onClick={()=>{setClusterFl(c.name);setDistFl("all");setCityFl("all")}}>{c.name} ({c.cities.length})</button>)}
+      </div>}
+      <div style={{marginBottom:6,display:"flex",gap:4,flexWrap:"wrap"}}>
+        <span style={{fontSize:".7rem",color:"var(--txt3)",padding:"4px 0"}}>מחוז:</span>
+        <button className={`btn btn-sm ${distFl==="all"?"btn-p":"btn-o"}`} onClick={()=>{setDistFl("all");setCityFl("all")}}>הכל</button>
+        {allDistricts.map(d=><button key={d} className={`btn btn-sm ${distFl===d?"btn-p":"btn-o"}`} onClick={()=>{setDistFl(d);setCityFl("all")}}>{d}</button>)}
+      </div>
+      {filteredCities.length>0&&<div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap",overflowX:"auto"}}>
+        <span style={{fontSize:".7rem",color:"var(--txt3)",padding:"4px 0"}}>עיר:</span>
+        <button className={`btn btn-sm ${cityFl==="all"?"btn-p":"btn-o"}`} onClick={()=>setCityFl("all")}>הכל</button>
+        {filteredCities.map(c=><button key={c} className={`btn btn-sm ${cityFl===c?"btn-p":"btn-o"}`} onClick={()=>setCityFl(c)}>{c}</button>)}
+      </div>}
+      {filtered.map(b=><div key={`${b.type}-${b.id}`} className="row" onClick={()=>{if(b.type==="customer")openEdit("customer",b);else openEdit("lead",b)}}>
+        <div><div style={{fontWeight:600}}>{b.icon} {b.name}</div>
+          <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{b.typeName} • {b.city||"ללא עיר"} • {getDistrict(b.city)||""}{b.phone?` • ${b.phone}`:""}</div></div>
+      </div>)}
+      {filtered.length===0&&<div className="emp">אין עסקים לתצוגה</div>}
+      <details style={{marginTop:12}}><summary style={{fontWeight:700,fontSize:".85rem",cursor:"pointer"}}>⚙️ ניהול אשכולות</summary>
+        <div className="card" style={{marginTop:6}}>
+          <div className="g2">
+            <div className="fg"><label>שם אשכול</label><input value={newClName} onChange={e=>setNewClName(e.target.value)} placeholder="למשל: פזורה"/></div>
+            <div className="fg"><label>ערים (מופרדות בפסיק)</label><input value={newClCities} onChange={e=>setNewClCities(e.target.value)} placeholder="רהט, חורה, לקיה"/></div>
+          </div>
+          <div style={{display:"flex",gap:4,marginTop:4}}>
+            <button className="btn btn-p btn-sm" onClick={saveCluster}>{editCluster!==null?"עדכן":"+ אשכול"}</button>
+            {editCluster!==null&&<button className="btn btn-o btn-sm" onClick={()=>{setEditCluster(null);setNewClName("");setNewClCities("")}}>ביטול</button>}
+          </div>
+          {clusters.map((c,i)=><div key={i} className="row" style={{marginTop:4}}>
+            <div><strong>{c.name}</strong><div style={{fontSize:".7rem",color:"var(--txt3)"}}>{c.cities.join(", ")}</div></div>
+            <div style={{display:"flex",gap:4}}>
+              <button className="btn btn-o btn-sm" onClick={()=>{setEditCluster(i);setNewClName(c.name);setNewClCities(c.cities.join(", "))}}>✏️</button>
+              <button className="btn btn-d btn-sm" onClick={()=>setClusters(p=>p.filter((_,j)=>j!==i))}>🗑️</button>
+            </div>
+          </div>)}
+        </div>
+      </details>
+    </div>);
+  };
+
   // ======================== CALENDAR ========================
   const Calendar=()=>{
     const[viewMonth,setViewMonth]=useState(()=>{const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`});
@@ -520,8 +674,12 @@ function App(){
         });
         if(l.followUp)ev.push({date:l.followUp,type:"lead_followup",icon:"📞",label:`מעקב ליד: ${l.name}`,color:"var(--warn)",data:l});
       });
+      // Tasks
+      tasks.forEach(t=>{
+        if(!t.done)ev.push({date:t.date,type:"task",icon:"✅",label:`משימה: ${t.text}`,color:"var(--dan)",data:t});
+      });
       return ev;
-    },[orders,customers,leads]);
+    },[orders,customers,leads,tasks]);
 
     // Build calendar grid
     const[year,month]=viewMonth.split("-").map(Number);
@@ -640,7 +798,7 @@ function App(){
 
   // ======================== SETTINGS ========================
   const Settings=()=>{
-    const ir=useRef(null);const bk=ld("vnb6_bk",[]);
+    const ir=useRef(null);const bk=ld("vnb7_bk",[]);
     return(<div className="fi">
       <h3 style={{fontWeight:700,marginBottom:12}}>⚙️ הגדרות</h3>
       <div className="card" style={{background:"linear-gradient(135deg,#1a2a1a,#1a1f2b)"}}>
@@ -664,8 +822,8 @@ function App(){
       </div>
       <button className="btn btn-d" style={{width:"100%",marginTop:8}} onClick={()=>{
         if(!confirm("למחוק הכל? גיבוי יישמר."))return;
-        const b=ld("vnb6_bk",[]);b.unshift({date:new Date().toISOString(),type:"pre-reset",data:{products,inventory,customers,sales,leads,expenses,orders}});sv("vnb6_bk",b);
-        ["vnb6_products","vnb6_inventory","vnb6_customers","vnb6_sales","vnb6_leads","vnb6_expenses","vnb6_orders"].forEach(k=>localStorage.removeItem(k));location.reload();
+        const b=ld("vnb7_bk",[]);b.unshift({date:new Date().toISOString(),type:"pre-reset",data:{products,inventory,customers,sales,leads,expenses,orders}});sv("vnb7_bk",b);
+        ["vnb7_products","vnb7_inventory","vnb7_customers","vnb7_sales","vnb7_leads","vnb7_expenses","vnb7_orders"].forEach(k=>localStorage.removeItem(k));location.reload();
       }}>🗑️ איפוס</button>
     </div>);
   };
@@ -729,19 +887,18 @@ function App(){
     const cust=f.customerId?gc(+f.customerId):null;
     const buildWAText=(docLabel)=>{
       const c=cust;
-      let txt=`אל: ${c?.name||""},\nלקוח יקר נשלחה לך ${docLabel} בוואטסאפ ובמייל.\n\n`;
-      txt+=`פרטים:\n`;
+      let txt=`אל: ${c?.name||""},\nלקוח יקר נשלחה לך ${docLabel}.\n\n`;
+      txt+=`מוצר | כמות | מחיר | סה"כ\n`;
+      txt+=`─────────────────\n`;
       f.items.forEach(item=>{const p=gp(item.productId);if(!p)return;
-        const boxCount=p.boxesPerCarton;
         if(item.unitType==="box"){
-          const itemTotal=+item.qty*+item.price;
-          txt+=`${p.name} - ${item.qty} קופ' × ${fmt(+item.price)} = ${fmt(itemTotal)}\n`;
+          txt+=`${p.name} | ${item.qty} קופ' | ${fmt(+item.price)} | ${fmt(+item.qty*+item.price)}\n`;
         } else {
-          const itemTotal=calcItemTotal(item,products);
-          txt+=`${p.name} - ${item.qty} קרטונים (${boxCount} קופ'/קרטון) × ${fmt(+item.price)}/קופ' = ${fmt(itemTotal)}\n`;
+          txt+=`${p.name} | ${item.qty} קרט' | ${fmt(+item.price)}/קופ' | ${fmt(calcItemTotal(item,products))}\n`;
         }
       });
-      txt+=`\nסה"כ: ${fmt(total)}\nכולל מע"מ: ${fmt(calcVat(total))}\n`;
+      txt+=`─────────────────\n`;
+      txt+=`*סה"כ: ${fmt(total)}*\n*כולל מע"מ: ${fmt(calcVat(total))}*\n`;
       if(+f.paid>0)txt+=`שולם: ${fmt(+f.paid)} | יתרה: ${fmt(calcVat(total)-+f.paid)}\n`;
       txt+=`\nבברכה,\nVNB`;
       return txt;
@@ -835,19 +992,22 @@ function App(){
     const shareWA=()=>{
       if(!cust?.phone){alert("אין טלפון ללקוח");return}
       let txt=`אל: ${cust.name},\nלקוח יקר להלן הזמנתך:\n\n`;
+      txt+=`מוצר | כמות | מחיר | סה"כ\n`;
+      txt+=`─────────────────\n`;
       activeItems.forEach(item=>{
         const p=gp(item.productId);if(!p)return;
         const boxCount=p.boxesPerCarton;
         if(item.unitType==="box"){
           const itemTotal=+item.qty*+item.price;
-          txt+=`${p.name} עלות לקופ' (${boxCount>100?boxCount:boxCount} יח') ${fmt(+item.price)}, סה"כ ${item.qty} קופ' ${fmt(itemTotal)}, ${fmt(calcVat(itemTotal))} כולל מע"מ\n\n`;
+          txt+=`${p.name} | ${item.qty} קופ' | ${fmt(+item.price)} | ${fmt(itemTotal)}\n`;
         } else {
           const cartonPrice=boxCount*+item.price;
           const itemTotal=+item.qty*cartonPrice;
-          txt+=`${p.name} עלות לקופ' ${fmt(+item.price)}, ${boxCount} קופ' לקרטון ${fmt(cartonPrice)} לקרטון, סה"כ ${item.qty} קרטונים ${fmt(itemTotal)}, ${fmt(calcVat(itemTotal))} כולל מע"מ\n\n`;
+          txt+=`${p.name} | ${item.qty} קרט' | ${fmt(+item.price)}/קופ' | ${fmt(itemTotal)}\n`;
         }
       });
-      txt+=`──────────\n*סה"כ: ${fmt(total)}*\n*כולל מע"מ: ${fmt(calcVat(total))}*\n`;
+      txt+=`─────────────────\n`;
+      txt+=`*סה"כ: ${fmt(total)}*\n*כולל מע"מ: ${fmt(calcVat(total))}*\n`;
       if(f.expectedDate)txt+=`\nזמן אספקה: ${fmtD(f.expectedDate)}\n`;
       txt+=`\nבברכה אבי\nחברת VNB`;
       sendWhatsApp(cust.phone,txt);
@@ -1054,6 +1214,8 @@ function App(){
       {tab==="customers"&&<Customers/>}
       {tab==="leads"&&<Leads/>}
       {tab==="expenses"&&<Expenses/>}
+      {tab==="geo"&&<Geo/>}
+      {tab==="tasks"&&<Tasks/>}
       {tab==="calendar"&&<Calendar/>}
       {tab==="reports"&&<Reports/>}
       {tab==="settings"&&<Settings/>}
