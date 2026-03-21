@@ -445,6 +445,7 @@ function App(){
   // ======================== SALES ========================
   const Sales=()=>{
     const[sr,setSr]=useState("");const[fl,setFl]=useState("all");const[docFl,setDocFl]=useState("all");
+    const[openMonth,setOpenMonth]=useState(()=>{const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`});
     const sorted=useMemo(()=>{
       let r=[...sales].sort((a,b)=>b.date.localeCompare(a.date));
       if(fl==="paid")r=r.filter(s=>s.status==="שולם");
@@ -454,6 +455,11 @@ function App(){
       if(sr)r=r.filter(s=>{const c=gc(s.customerId);return c?.name.includes(sr)});
       return r;
     },[sales,sr,fl,docFl]);
+    const months=useMemo(()=>{
+      const m={};sorted.forEach(s=>{const k=s.date.slice(0,7);if(!m[k])m[k]=[];m[k].push(s)});
+      return Object.entries(m).sort((a,b)=>b[0].localeCompare(a[0]));
+    },[sorted]);
+    const monthNames={"01":"ינואר","02":"פברואר","03":"מרץ","04":"אפריל","05":"מאי","06":"יוני","07":"יולי","08":"אוגוסט","09":"ספטמבר","10":"אוקטובר","11":"נובמבר","12":"דצמבר"};
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <h3 style={{fontWeight:700}}>💰 מכירות ({sales.length})</h3>
@@ -462,17 +468,26 @@ function App(){
       <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש לקוח..."/><span className="ic">🔍</span></div>
       <div className="tb">{[["all","הכל"],["unpaid","ממתין"],["partial","חלקי"],["paid","שולם"]].map(([k,l])=>
         <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
-      <div className="tb" style={{marginBottom:4}}>{[["all","כל המסמכים"],["חשבונית","חשבונית"],["קבלה","קבלה"],["תעודת משלוח","ת.משלוח"],["noInvoice","ללא חשב'"]].map(([k,l])=>
+      <div className="tb" style={{marginBottom:4}}>{[["all","כל המסמכים"],["חשבונית","חשבונית"],["noInvoice","ללא חשב\'"]].map(([k,l])=>
         <button key={k} className={docFl===k?"a":""} onClick={()=>setDocFl(k)}>{l}</button>)}</div>
-      {sorted.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
-        return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
-          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
-            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{s.date}{s.docType&&s.docType!=="ללא"?` • ${s.docType}`:""}{s.invoiceNum?` • מס'${s.invoiceNum}`:""}{s.payMethod&&s.payMethod!=="מזומן"?` • ${s.payMethod}`:""}{s.moneyDest&&s.moneyDest!=="אצלי"?` • ${s.moneyDest}`:""}{s.notes?` • ${s.notes.slice(0,18)}`:""}</div>
-            {s.status==="חלקי"&&<div style={{fontSize:".62rem",color:"var(--warn)"}}>💰 שולם {fmt(+s.paid)} | יתרה {fmt(calcVat(calcSaleTotal(s,products))-(+s.paid))}</div>}
-            {(s.invoiceSent||s.receiptSent||s.quoteSent||s.deliverySent)&&<div style={{fontSize:".62rem",display:"flex",gap:2,marginTop:1}}>{s.invoiceSent&&<span style={{color:"var(--suc)"}}>✓חשב</span>}{s.receiptSent&&<span style={{color:"var(--suc)"}}>✓קבלה</span>}{s.quoteSent&&<span style={{color:"var(--suc)"}}>✓הצעה</span>}{s.deliverySent&&<span style={{color:"var(--suc)"}}>✓ת.מ</span>}</div>}</div>
-          <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div><div style={{color:"var(--pri)",fontSize:".78rem"}}>{fmt(calcVat(t))}</div>
-            <span className={`badge ${s.status==="שולם"?"b-s":s.status==="חלקי"?"b-w":"b-d"}`}>{s.status}</span>
+      {months.map(([month,items])=>{
+        const mTotal=items.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0);
+        const isOpen=openMonth===month;
+        return(<div key={month}>
+          <div onClick={()=>setOpenMonth(isOpen?null:month)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 6px",background:"var(--bg)",borderRadius:8,marginBottom:4,cursor:"pointer",borderRight:isOpen?"3px solid var(--pri)":"3px solid transparent"}}>
+            <span style={{fontWeight:700,fontSize:".85rem"}}>{monthNames[month.slice(5)]||month.slice(5)} {month.slice(0,4)}</span>
+            <span style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:".72rem",color:"var(--txt3)"}}>{items.length} מכירות</span><strong style={{color:"var(--suc)",fontSize:".85rem"}}>{fmt(mTotal)}</strong><span>{isOpen?"▲":"▼"}</span></span>
           </div>
+          {isOpen&&items.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
+            return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
+              <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
+                <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{s.date}{s.docType&&s.docType!=="ללא"?` • ${s.docType}`:""}{s.invoiceNum?` • מס\'${s.invoiceNum}`:""}{s.payMethod&&s.payMethod!=="מזומן"?` • ${s.payMethod}`:""}{s.moneyDest&&s.moneyDest!=="אצלי"?` • ${s.moneyDest}`:""}{s.notes?` • ${s.notes.slice(0,18)}`:""}</div>
+                {s.status==="חלקי"&&<div style={{fontSize:".62rem",color:"var(--warn)"}}>💰 שולם {fmt(+s.paid)} | יתרה {fmt(calcVat(calcSaleTotal(s,products))-(+s.paid))}</div>}
+                {(s.invoiceSent||s.receiptSent)&&<div style={{fontSize:".62rem",display:"flex",gap:2}}>{s.invoiceSent&&<span style={{color:"var(--suc)"}}>✓חשב</span>}{s.receiptSent&&<span style={{color:"var(--suc)"}}>✓קבלה</span>}</div>}</div>
+              <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div>
+                <span className={`badge ${s.status==="שולם"?"b-s":s.status==="חלקי"?"b-w":"b-d"}`}>{s.status}</span></div>
+            </div>)
+          })}
         </div>)
       })}
       {sorted.length===0&&<div className="emp">אין מכירות</div>}
@@ -597,34 +612,33 @@ function App(){
 
   // ======================== EXPENSES ========================
   const Expenses=()=>{
-    const[period,setPeriod]=useState("all");const now=new Date();
-    const filtered=useMemo(()=>{
-      if(period==="all")return expenses;
-      if(period==="month")return expenses.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
-      return expenses.filter(e=>new Date(e.date).getFullYear()===now.getFullYear());
-    },[expenses,period]);
-    const total=filtered.reduce((s,e)=>s+e.amount,0);
-    const cats=useMemo(()=>{const m={};filtered.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1])},[filtered]);
+    const[openMonth,setOpenMonth]=useState(()=>{const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`});
+    const sorted=useMemo(()=>[...expenses].sort((a,b)=>b.date.localeCompare(a.date)),[expenses]);
+    const months=useMemo(()=>{
+      const m={};sorted.forEach(e=>{const k=e.date.slice(0,7);if(!m[k])m[k]=[];m[k].push(e)});
+      return Object.entries(m).sort((a,b)=>b[0].localeCompare(a[0]));
+    },[sorted]);
+    const MN={"01":"ינואר","02":"פברואר","03":"מרץ","04":"אפריל","05":"מאי","06":"יוני","07":"יולי","08":"אוגוסט","09":"ספטמבר","10":"אוקטובר","11":"נובמבר","12":"דצמבר"};
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <h3 style={{fontWeight:700}}>💳 הוצאות</h3>
+        <h3 style={{fontWeight:700}}>💳 הוצאות ({expenses.length})</h3>
         <button className="btn btn-p btn-sm" onClick={()=>openNew("expense")}>+ הוצאה</button>
       </div>
-      <div className="tb">{[["all","הכל"],["month","חודשי"],["year","שנתי"]].map(([k,l])=>
-        <button key={k} className={period===k?"a":""} onClick={()=>setPeriod(k)}>{l}</button>)}</div>
-      <div className="sc" style={{marginBottom:8}}><div className="l">סה"כ הוצאות</div><div className="v" style={{color:"var(--dan)"}}>{fmt(total)}</div></div>
-      {cats.length>0&&<div className="card">
-        <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>פילוח</div>
-        {cats.map(([cat,amt])=><div key={cat} style={{display:"flex",alignItems:"center",gap:5,marginBottom:4}}>
-          <span style={{fontSize:".75rem",width:55,flexShrink:0,color:"var(--txt2)"}}>{cat}</span>
-          <div className="prg" style={{flex:1}}><div className="f" style={{width:`${total>0?(amt/total*100):0}%`,background:"var(--pri)"}}/></div>
-          <span style={{fontSize:".75rem",fontWeight:600,width:50,textAlign:"left"}}>{fmt(amt)}</span>
-        </div>)}
-      </div>}
-      {[...filtered].sort((a,b)=>b.date.localeCompare(a.date)).map(e=><div className="row" key={e.id} onClick={()=>openEdit("expense",e)}>
-        <div><div style={{fontWeight:600,fontSize:".8rem"}}>{e.category}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{e.date}{e.description?` • ${e.description}`:""}</div></div>
-        <div style={{fontWeight:700,color:"var(--dan)"}}>{fmt(e.amount)}</div>
-      </div>)}
+      {months.map(([month,items])=>{
+        const mTotal=items.reduce((s,e)=>s+e.amount,0);
+        const isOpen=openMonth===month;
+        return(<div key={month}>
+          <div onClick={()=>setOpenMonth(isOpen?null:month)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 6px",background:"var(--bg)",borderRadius:8,marginBottom:4,cursor:"pointer",borderRight:isOpen?"3px solid var(--dan)":"3px solid transparent"}}>
+            <span style={{fontWeight:700,fontSize:".85rem"}}>{MN[month.slice(5)]||month.slice(5)} {month.slice(0,4)}</span>
+            <span style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:".72rem",color:"var(--txt3)"}}>{items.length}</span><strong style={{color:"var(--dan)",fontSize:".85rem"}}>{fmt(mTotal)}</strong><span>{isOpen?"▲":"▼"}</span></span>
+          </div>
+          {isOpen&&items.map(e=>(<div className="row" key={e.id} onClick={()=>openEdit("expense",e)}>
+            <div><div style={{fontWeight:600}}>{e.category}</div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>{e.date}{e.description?` • ${e.description}`:""}</div></div>
+            <div style={{textAlign:"left"}}><div style={{fontWeight:700,color:"var(--dan)"}}>{fmt(e.amount)}</div>
+              <span className={`badge ${e.paid?"b-s":"b-d"}`}>{e.paid?"שולם":"לא שולם"}</span></div>
+          </div>))}
+        </div>)
+      })}
     </div>);
   };
 
@@ -882,6 +896,7 @@ function App(){
       leads.forEach(l=>{
         (l.visits||[]).forEach(v=>{
           ev.push({date:v.date,type:"lead_visit",icon:"🎯",label:`ביקור ליד: ${l.name}${v.note?` - ${v.note}`:""}`,color:"var(--pur)",data:l});
+          if(v.nextVisit)ev.push({date:v.nextVisit,type:"lead_next",icon:"🔄",label:`ביקור הבא ליד: ${l.name}`,color:"var(--inf)",data:l});
         });
         if(l.followUp)ev.push({date:l.followUp,type:"lead_followup",icon:"📞",label:`מעקב ליד: ${l.name}`,color:"var(--warn)",data:l});
       });
@@ -1106,8 +1121,9 @@ function App(){
     return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
       <h3>{isE?"עריכת מוצר":"מוצר חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
       <div className="fg"><label>שם מוצר</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
-      <div className="g2">
-        <div className="fg"><label>קופסאות/קרטון</label><input type="number" value={f.boxesPerCarton} onChange={e=>u("boxesPerCarton",e.target.value)}/></div>
+      <div className="g3">
+        <div className="fg"><label>קופ'/קרטון</label><input type="number" value={f.boxesPerCarton} onChange={e=>u("boxesPerCarton",e.target.value)}/></div>
+        <div className="fg"><label>קרט'/משטח</label><input type="number" value={f.cartonsPerPallet||f.boxesPerCarton} onChange={e=>u("cartonsPerPallet",e.target.value)}/></div>
         <div className="fg"><label>מינימום מלאי</label><input type="number" value={f.minStock} onChange={e=>u("minStock",e.target.value)}/></div>
       </div>
       <div className="g2">
@@ -1254,9 +1270,34 @@ function App(){
     };
     const del=()=>{if(!confirm("למחוק?"))return;setOrders(p=>p.filter(o=>o.id!==editItem.id));setModal(null)};
     const toSale=()=>{
-      if(!confirm("להמיר למכירה?"))return;
+      if(!confirm("להמיר למכירה? ההזמנה תימחק מרשימת ההזמנות"))return;
       setSales(p=>[...p,{id:nxId(p),date:new Date().toISOString().split("T")[0],customerId:+f.customerId,items:activeItems,paid:0,status:"ממתין",docType:"ללא",notes:"הומר מהזמנה",payMethod:"מזומן",expectedPayDate:""}]);
-      setOrders(p=>p.map(o=>o.id===editItem.id?{...o,status:"סופק"}:o));
+      setOrders(p=>p.filter(o=>o.id!==editItem.id));
+      setModal(null);
+    };
+    const toPartialSale=()=>{
+      // Let user mark which items were delivered
+      const delivered=[];const remaining=[];
+      f.items.forEach(item=>{
+        if(+item.qty>0){
+          const ans=prompt(`${gp(+item.productId)?.name||""}: כמה סופקו מתוך ${item.qty}?`,item.qty);
+          if(ans===null)return;
+          const dQty=Math.min(+ans,+item.qty);
+          const rQty=+item.qty-dQty;
+          if(dQty>0)delivered.push({...item,qty:dQty});
+          if(rQty>0)remaining.push({...item,qty:rQty});
+        }
+      });
+      if(delivered.length===0){alert("לא סומנו מוצרים לאספקה");return}
+      // Create sale for delivered items
+      setSales(p=>[...p,{id:nxId(p),date:new Date().toISOString().split("T")[0],customerId:+f.customerId,items:delivered,paid:0,status:"ממתין",docType:"ללא",notes:"אספקה חלקית",payMethod:"מזומן",expectedPayDate:""}]);
+      if(remaining.length>0){
+        // Update order with remaining items
+        setOrders(p=>p.map(o=>o.id===editItem.id?{...o,items:[...remaining,...f.items.filter(i=>+i.qty===0)],notes:(o.notes||"")+" | חלקי סופק "+new Date().toISOString().split("T")[0]}:o));
+      } else {
+        // All delivered - remove order
+        setOrders(p=>p.filter(o=>o.id!==editItem.id));
+      }
       setModal(null);
     };
     const shareWA=()=>{
@@ -1320,7 +1361,8 @@ function App(){
         <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
         {isE&&<button className="btn btn-w btn-sm" onClick={shareWA}>📱 WhatsApp</button>}
         {isE&&<button className="btn btn-i btn-sm" onClick={shareEmail}>✉️ מייל</button>}
-        {isE&&f.status!=="סופק"&&<button className="btn btn-s btn-sm" onClick={toSale}>💰 המר למכירה</button>}
+        {isE&&f.status!=="סופק"&&<button className="btn btn-s btn-sm" onClick={toSale}>💰 סופק הכל</button>}
+        {isE&&f.status!=="סופק"&&<button className="btn btn-w btn-sm" onClick={toPartialSale}>📦 אספקה חלקית</button>}
         {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
       </div>
     </div></div>);
@@ -1404,7 +1446,7 @@ function App(){
   const LeadModal=()=>{
     const isE=!!editItem;
     const[f,sF]=useState(editItem||{name:"",phone:"",city:"",address:"",status:"חדש",followUp:"",visits:[]});
-    const[newVisit,setNewVisit]=useState({date:new Date().toISOString().split("T")[0],note:""});
+    const[newVisit,setNewVisit]=useState({date:new Date().toISOString().split("T")[0],note:"",nextVisit:""});
     const u=(k,v)=>sF(p=>({...p,[k]:v}));
     const save=()=>{if(!f.name){alert("הכנס שם");return}
       if(isE)setLeads(p=>p.map(l=>l.id===editItem.id?f:l));
@@ -1443,10 +1485,11 @@ function App(){
       <div className="fg"><label>מעקב</label><input type="date" value={f.followUp||""} onChange={e=>u("followUp",e.target.value)}/></div>
       {isE&&<div className="card" style={{background:"var(--bg)"}}>
         <div style={{fontWeight:600,fontSize:".8rem",marginBottom:4}}>📅 ביקורים</div>
-        {(f.visits||[]).map((v,i)=><div key={i} className="visit-tag">{fmtD(v.date)}{v.note?` - ${v.note}`:""}</div>)}
-        <div className="g2" style={{marginTop:6}}>
+        {(f.visits||[]).map((v,i)=><div key={i} className="visit-tag">{fmtD(v.date)}{v.note?` - ${v.note}`:""}{v.nextVisit?` → הבא: ${fmtD(v.nextVisit)}`:""}</div>)}
+        <div className="g3" style={{marginTop:6}}>
           <div className="fg"><label>תאריך</label><input type="date" value={newVisit.date} onChange={e=>setNewVisit(p=>({...p,date:e.target.value}))}/></div>
           <div className="fg"><label>הערה</label><input value={newVisit.note} onChange={e=>setNewVisit(p=>({...p,note:e.target.value}))}/></div>
+          <div className="fg"><label>ביקור הבא</label><input type="date" value={newVisit.nextVisit||""} onChange={e=>setNewVisit(p=>({...p,nextVisit:e.target.value}))}/></div>
         </div>
         <button className="btn btn-o btn-sm" onClick={addVisit}>+ ביקור</button>
       </div>}
