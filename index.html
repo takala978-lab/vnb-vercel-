@@ -157,27 +157,44 @@ function App(){
   const[pp,setPp]=useState("month");
 
   // Auto-save all
-  // Firebase real-time sync - load from cloud on mount
+  // Firebase real-time sync
   const[fbLoaded,setFbLoaded]=useState(false);
   useEffect(()=>{
-    fbDB.ref("vnb").once("value").then(snap=>{
-      const d=snap.val();
-      if(d){
-        if(d.products&&d.products.length)setProducts(d.products);
-        if(d.inventory&&d.inventory.length)setInventory(d.inventory);
-        if(d.customers&&d.customers.length)setCustomers(d.customers);
-        if(d.sales&&d.sales.length)setSales(d.sales);
-        if(d.leads&&d.leads.length)setLeads(d.leads);
-        if(d.expenses&&d.expenses.length)setExpenses(d.expenses);
-        if(d.orders&&d.orders.length)setOrders(d.orders);
-        if(d.tasks)setTasks(d.tasks);
-        if(d.clusters)setClusters(d.clusters);
-        console.log("✅ Loaded from Firebase");
+    const VER="vnb12";
+    fbDB.ref("vnb/_ver").once("value").then(snap=>{
+      const remoteVer=snap.val();
+      if(remoteVer!==VER){
+        // New version - push all defaults to Firebase
+        console.log("🔄 New version detected, pushing defaults to Firebase");
+        const allData={products,inventory,customers,sales,leads,expenses,orders,tasks,clusters,_ver:VER};
+        fbDB.ref("vnb").set(allData).then(()=>{
+          console.log("✅ Defaults pushed to Firebase");
+          setFbLoaded(true);
+        });
+      } else {
+        // Same version - load from Firebase
+        fbDB.ref("vnb").once("value").then(snap2=>{
+          const d=snap2.val();
+          if(d){
+            if(d.products&&d.products.length)setProducts(d.products);
+            if(d.inventory&&d.inventory.length)setInventory(d.inventory);
+            if(d.customers&&d.customers.length)setCustomers(d.customers);
+            if(d.sales&&d.sales.length)setSales(d.sales);
+            if(d.leads&&d.leads.length)setLeads(d.leads);
+            if(d.expenses&&d.expenses.length)setExpenses(d.expenses);
+            if(d.orders&&d.orders.length)setOrders(d.orders);
+            if(d.tasks)setTasks(d.tasks);
+            if(d.clusters)setClusters(d.clusters);
+            console.log("✅ Loaded from Firebase");
+          }
+          setFbLoaded(true);
+        });
       }
-      setFbLoaded(true);
-    }).catch(e=>{console.log("FB load err:",e);setFbLoaded(true)});
-    // Listen for real-time changes
+    }).catch(e=>{console.log("FB err:",e);setFbLoaded(true)});
+    // Listen for real-time changes from other devices
+    let firstLoad=true;
     fbDB.ref("vnb").on("value",snap=>{
+      if(firstLoad){firstLoad=false;return}
       const d=snap.val();
       if(!d)return;
       if(d.products)setProducts(p=>JSON.stringify(p)!==JSON.stringify(d.products)?d.products:p);
@@ -912,6 +929,7 @@ function App(){
   // ======================== PLANNER ========================
   const Planner=()=>{
     const dayNames=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+    const taskTypes=[{k:"visit",l:"ביקור",i:"👥"},{k:"delivery",l:"אספקה",i:"🚚"},{k:"collection",l:"גבייה",i:"💳"},{k:"other",l:"אחר",i:"📌"}];
     const[weekStart,setWeekStart]=useState(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d.toISOString().split("T")[0]});
     const[plan,setPlan]=useState(()=>ld("vnb12_planner",{}));
     useEffect(()=>{sv("vnb12_planner",plan)},[plan]);
@@ -920,12 +938,23 @@ function App(){
     const nextWeek=()=>{const d=new Date(weekStart);d.setDate(d.getDate()+7);setWeekStart(d.toISOString().split("T")[0])};
     const[addDay,setAddDay]=useState(null);
     const[addSr,setAddSr]=useState("");
+    const[addType,setAddType]=useState("visit");
     const allBiz=[...customers.map(c=>({...c,bType:"customer",bIcon:"👥"})),...leads.map(l=>({...l,bType:"lead",bIcon:"🎯"}))].sort((a,b)=>a.name.localeCompare(b.name));
     const addToPlan=(day,biz)=>{
-      setPlan(p=>{const d=p[day]||[];if(d.some(x=>x.id===biz.id&&x.bType===biz.bType))return p;return{...p,[day]:[...d,{id:biz.id,bType:biz.bType,name:biz.name,city:biz.city,bIcon:biz.bIcon}]}});
+      const hasOrder=orders.some(o=>o.customerId===biz.id&&o.status!=="סופק");
+      setPlan(p=>{const d=p[day]||[];if(d.some(x=>x.id===biz.id&&x.bType===biz.bType))return p;return{...p,[day]:[...d,{id:biz.id,bType:biz.bType,name:biz.name,city:biz.city||"",bIcon:biz.bIcon,taskType:addType,status:"planned",hasOrder,note:""}]}});
       setAddDay(null);setAddSr("");
     };
+    const addFreeTask=(day,text)=>{
+      if(!text.trim())return;
+      setPlan(p=>({...p,[day]:[...(p[day]||[]),{id:Date.now(),bType:"task",name:text,city:"",bIcon:"📌",taskType:"other",status:"planned",note:""}]}));
+    };
     const removeFromPlan=(day,idx)=>{setPlan(p=>({...p,[day]:(p[day]||[]).filter((_,i)=>i!==idx)}))};
+    const toggleStatus=(day,idx)=>{
+      setPlan(p=>{const d=[...(p[day]||[])];const item=d[idx];
+        d[idx]={...item,status:item.status==="planned"?"done":item.status==="done"?"skipped":"planned"};
+        return{...p,[day]:d}});
+    };
     const getCargoForDay=(day)=>{
       const items=plan[day]||[];
       const custIds=items.filter(i=>i.bType==="customer").map(i=>i.id);
@@ -938,11 +967,25 @@ function App(){
       }));
       return cargo;
     };
+    const weekStats=useMemo(()=>{
+      let total=0,done=0,skipped=0;
+      days.forEach(day=>(plan[day]||[]).forEach(item=>{total++;if(item.status==="done")done++;if(item.status==="skipped")skipped++}));
+      return{total,done,skipped,pct:total?Math.round(done/total*100):0};
+    },[plan,days]);
+    const[freeText,setFreeText]=useState("");
+    const statusIcon=(s)=>s==="done"?"✅":s==="skipped"?"⏭️":"⬜";
+    const statusColor=(s)=>s==="done"?"var(--suc)":s==="skipped"?"var(--txt3)":"var(--txt)";
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <button className="btn btn-o btn-sm" onClick={prevWeek}>→</button>
         <h3 style={{fontWeight:700,fontSize:".9rem"}}>📋 תוכנית שבועית</h3>
         <button className="btn btn-o btn-sm" onClick={nextWeek}>←</button>
+      </div>
+      <div style={{background:"var(--bg)",borderRadius:8,padding:8,marginBottom:8,display:"flex",justifyContent:"space-around",textAlign:"center"}}>
+        <div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>מתוכנן</div><strong>{weekStats.total}</strong></div>
+        <div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>בוצע</div><strong style={{color:"var(--suc)"}}>{weekStats.done}</strong></div>
+        <div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>דילוג</div><strong style={{color:"var(--txt3)"}}>{weekStats.skipped}</strong></div>
+        <div><div style={{fontSize:".7rem",color:"var(--txt3)"}}>ביצוע</div><strong style={{color:weekStats.pct>=70?"var(--suc)":weekStats.pct>=40?"var(--warn)":"var(--dan)"}}>{weekStats.pct}%</strong></div>
       </div>
       {days.map(day=>{
         const d=new Date(day);const dayName=dayNames[d.getDay()];
@@ -950,26 +993,39 @@ function App(){
         const cargo=getCargoForDay(day);
         const hasCargo=Object.keys(cargo).length>0;
         const isToday=day===new Date().toISOString().split("T")[0];
-        return(<div key={day} className="card" style={{marginBottom:6,borderColor:isToday?"var(--pri)":"var(--brd)"}}>
+        const dayDone=items.filter(x=>x.status==="done").length;
+        const isPast=day<new Date().toISOString().split("T")[0];
+        return(<div key={day} className="card" style={{marginBottom:6,borderColor:isToday?"var(--pri)":"var(--brd)",opacity:isPast&&!isToday?0.7:1}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-            <strong style={{fontSize:".85rem"}}>{dayName} {fmtD(day)}</strong>
+            <div><strong style={{fontSize:".85rem"}}>{dayName} {fmtD(day)}</strong>
+              {items.length>0&&<span style={{fontSize:".65rem",marginRight:6,color:"var(--txt3)"}}>{dayDone}/{items.length}</span>}
+            </div>
             <button className="btn btn-o btn-sm" onClick={()=>setAddDay(addDay===day?null:day)}>+ הוסף</button>
           </div>
-          {addDay===day&&<div style={{marginBottom:6}}>
+          {addDay===day&&<div style={{marginBottom:6,background:"var(--bg)",borderRadius:6,padding:6}}>
+            <div style={{display:"flex",gap:3,marginBottom:4,flexWrap:"wrap"}}>
+              {taskTypes.map(t=><button key={t.k} className={`btn btn-sm ${addType===t.k?"btn-p":"btn-o"}`} style={{fontSize:".65rem"}} onClick={()=>setAddType(t.k)}>{t.i} {t.l}</button>)}
+            </div>
             <input value={addSr} onChange={e=>setAddSr(e.target.value)} placeholder="חפש לקוח/ליד..." style={{fontSize:".8rem",marginBottom:4,width:"100%"}}/>
-            <div style={{maxHeight:150,overflow:"auto"}}>
-              {allBiz.filter(b=>!addSr||b.name.includes(addSr)).slice(0,15).map(b=>
-                <div key={`${b.bType}-${b.id}`} onClick={()=>addToPlan(day,b)} style={{fontSize:".75rem",padding:"3px 6px",cursor:"pointer",borderBottom:"1px solid var(--brd)"}}>{b.bIcon} {b.name} {b.city?`(${b.city})`:""}</div>
-              )}
+            <div style={{maxHeight:120,overflow:"auto"}}>
+              {allBiz.filter(b=>!addSr||b.name.includes(addSr)).slice(0,12).map(b=>{
+                const ho=orders.some(o=>o.customerId===b.id&&o.status!=="סופק");
+                return <div key={`${b.bType}-${b.id}`} onClick={()=>addToPlan(day,b)} style={{fontSize:".73rem",padding:"3px 6px",cursor:"pointer",borderBottom:"1px solid var(--brd)",display:"flex",justifyContent:"space-between"}}><span>{b.bIcon} {b.name}</span><span style={{color:"var(--txt3)"}}>{b.city||""}{ho?" 📦":""}</span></div>
+              })}
+            </div>
+            <div style={{display:"flex",gap:4,marginTop:4}}>
+              <input value={freeText} onChange={e=>setFreeText(e.target.value)} placeholder="משימה חופשית..." style={{fontSize:".75rem",flex:1}}/>
+              <button className="btn btn-o btn-sm" onClick={()=>{addFreeTask(day,freeText);setFreeText("")}}>+</button>
             </div>
           </div>}
-          {items.map((item,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"2px 0",fontSize:".78rem"}}>
-            <span>{item.bIcon} {item.name} {item.city?`(${item.city})`:""}</span>
-            <button onClick={()=>removeFromPlan(day,i)} style={{background:"none",border:"none",cursor:"pointer",fontSize:".7rem"}}>✕</button>
+          {items.map((item,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",fontSize:".78rem",borderBottom:"1px solid var(--brd)",textDecoration:item.status==="skipped"?"line-through":"none",color:statusColor(item.status)}}>
+            <span onClick={()=>toggleStatus(day,i)} style={{cursor:"pointer",fontSize:"1rem"}}>{statusIcon(item.status)}</span>
+            <span style={{flex:1}}>{taskTypes.find(t=>t.k===item.taskType)?.i||"📌"} {item.name} {item.city?`(${item.city})`:""}{item.hasOrder?" 📦":""}</span>
+            <button onClick={()=>removeFromPlan(day,i)} style={{background:"none",border:"none",cursor:"pointer",fontSize:".65rem",color:"var(--txt3)"}}>✕</button>
           </div>)}
           {items.length===0&&<div style={{fontSize:".72rem",color:"var(--txt3)"}}>ריק</div>}
           {hasCargo&&<details style={{marginTop:4}}><summary style={{fontSize:".7rem",color:"var(--pri)",cursor:"pointer"}}>📦 סחורה נדרשת</summary>
-            {Object.entries(cargo).map(([name,q])=><div key={name} style={{fontSize:".68rem"}}>{name}: {q.cartons>0?q.cartons+" קרט'":"" }{q.boxes>0?" "+q.boxes+" קופ'":""}</div>)}
+            {Object.entries(cargo).map(([name,q])=><div key={name} style={{fontSize:".68rem"}}>{name}: {q.cartons>0?q.cartons+" קרט\'":"" }{q.boxes>0?" "+q.boxes+" קופ\'":""}</div>)}
           </details>}
         </div>)
       })}
