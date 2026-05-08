@@ -65,20 +65,30 @@ button{cursor:pointer;border:none;background:none;color:var(--txt)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" onerror="window._fbFail=true"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" onerror="window._fbFail=true"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCG9v9CtOIaV_v9sKFLYKR8SgqILSESrbI",
-    authDomain: "vnbat10.firebaseapp.com",
-    databaseURL: "https://vnbat10-default-rtdb.firebaseio.com",
-    projectId: "vnbat10",
-    storageBucket: "vnbat10.firebasestorage.app",
-    messagingSenderId: "349304414603",
-    appId: "1:349304414603:web:f35eaee0f1a2147db14f8e"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const fbDB = firebase.database();
+  var fbDB = null;
+  try {
+    if(!window._fbFail && typeof firebase !== 'undefined') {
+      firebase.initializeApp({
+        apiKey: "AIzaSyCG9v9CtOIaV_v9sKFLYKR8SgqILSESrbI",
+        authDomain: "vnbat10.firebaseapp.com",
+        databaseURL: "https://vnbat10-default-rtdb.firebaseio.com",
+        projectId: "vnbat10",
+        storageBucket: "vnbat10.firebasestorage.app",
+        messagingSenderId: "349304414603",
+        appId: "1:349304414603:web:f35eaee0f1a2147db14f8e"
+      });
+      fbDB = firebase.database();
+      console.log("✅ Firebase connected");
+    } else {
+      console.log("⚠️ Firebase not available, using localStorage only");
+    }
+  } catch(e) {
+    console.log("⚠️ Firebase init error:", e.message);
+    fbDB = null;
+  }
 </script>
 <script type="text/babel">
 const{useState,useEffect,useMemo,useRef}=React;
@@ -113,8 +123,10 @@ const DO=[{"_cn": "חמאיסה חומרי בניין בעיר", "customerId": 5
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function sv(k,v){
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
-  const fbKey=k.replace(/^vnb\d+_/,"");
-  try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){}
+  if(fbDB){
+    const fbKey=k.replace(/^vnb\d+_/,"");
+    try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){console.log("FB save err:",e)}
+  }
 }
 const fmt=n=>`₪${(n||0).toLocaleString("he-IL",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
 const fmtD=d=>d?new Date(d+"T00:00:00").toLocaleDateString("he-IL"):"—";
@@ -161,6 +173,7 @@ function App(){
   const[fbLoaded,setFbLoaded]=useState(false);
   useEffect(()=>{
     const VER="vnb12";
+    if(!fbDB){setFbLoaded(true);return}
     fbDB.ref("vnb/_ver").once("value").then(snap=>{
       const remoteVer=snap.val();
       if(remoteVer!==VER){
