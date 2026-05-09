@@ -164,6 +164,8 @@ function App(){
   const[orders,setOrders]=useState(()=>ld("vnb13_orders",DO));
   const[tasks,setTasks]=useState(()=>ld("vnb13_tasks",[]));
   const[clusters,setClusters]=useState(()=>ld("vnb13_clusters",[{name:"פזורה",cities:["רהט","חורה","לקיה","כסייפה","שגב שלום","תל שבע","ערד"]},{name:"שפלה",cities:["רמלה","לוד","גדרה","יבנה","נס ציונה","רחובות","מודיעין","בית שמש"]}]));
+  const[weekPlan,setWeekPlan]=useState(()=>ld("vnb13_weekPlan",{}));
+  const[plannerPick,setPlannerPick]=useState(null); // {type,id,name,city} - for "add to week" flow
   const[modal,setModal]=useState(null);
   const[editItem,setEditItem]=useState(null);
   const[pp,setPp]=useState("month");
@@ -172,6 +174,18 @@ function App(){
   const[fbLoaded,setFbLoaded]=useState(false);
   useEffect(()=>{
     if(!fbDB){setFbLoaded(true);return}
+    
+    // Helper: normalize city/address fields by trimming whitespace
+    const normCities=arr=>{
+      if(!Array.isArray(arr))return arr;
+      return arr.map(item=>{
+        if(!item||typeof item!=="object")return item;
+        const updated={...item};
+        if(typeof updated.city==="string")updated.city=updated.city.trim();
+        if(typeof updated.address==="string")updated.address=updated.address.trim();
+        return updated;
+      });
+    };
     
     // Initial load from Firebase - source of truth
     fbDB.ref("vnb").once("value").then(snap=>{
@@ -186,18 +200,19 @@ function App(){
         // Firebase has real data - load it (it's the source of truth)
         if(Array.isArray(d.products))setProducts(d.products);
         if(Array.isArray(d.inventory))setInventory(d.inventory);
-        if(Array.isArray(d.customers))setCustomers(d.customers);
+        if(Array.isArray(d.customers))setCustomers(normCities(d.customers));
         if(Array.isArray(d.sales))setSales(d.sales);
-        if(Array.isArray(d.leads))setLeads(d.leads);
+        if(Array.isArray(d.leads))setLeads(normCities(d.leads));
         if(Array.isArray(d.expenses))setExpenses(d.expenses);
         if(Array.isArray(d.orders))setOrders(d.orders);
         if(Array.isArray(d.tasks))setTasks(d.tasks);
         if(Array.isArray(d.clusters))setClusters(d.clusters);
+        if(d.weekPlan&&typeof d.weekPlan==="object")setWeekPlan(d.weekPlan);
         console.log("✅ Loaded from Firebase");
       } else {
         // Firebase is empty - one-time bootstrap from code defaults
         console.log("🔄 Firebase empty, bootstrapping from defaults");
-        const allData={products,inventory,customers,sales,leads,expenses,orders,tasks,clusters};
+        const allData={products,inventory,customers,sales,leads,expenses,orders,tasks,clusters,weekPlan};
         fbDB.ref("vnb").set(allData).then(()=>console.log("✅ Bootstrap complete"));
       }
       // Only AFTER load completes - enable auto-save
@@ -215,13 +230,14 @@ function App(){
       if(!d)return;
       if(Array.isArray(d.products))setProducts(p=>JSON.stringify(p)!==JSON.stringify(d.products)?d.products:p);
       if(Array.isArray(d.inventory))setInventory(p=>JSON.stringify(p)!==JSON.stringify(d.inventory)?d.inventory:p);
-      if(Array.isArray(d.customers))setCustomers(p=>JSON.stringify(p)!==JSON.stringify(d.customers)?d.customers:p);
+      if(Array.isArray(d.customers)){const nc=normCities(d.customers);setCustomers(p=>JSON.stringify(p)!==JSON.stringify(nc)?nc:p);}
       if(Array.isArray(d.sales))setSales(p=>JSON.stringify(p)!==JSON.stringify(d.sales)?d.sales:p);
-      if(Array.isArray(d.leads))setLeads(p=>JSON.stringify(p)!==JSON.stringify(d.leads)?d.leads:p);
+      if(Array.isArray(d.leads)){const nl=normCities(d.leads);setLeads(p=>JSON.stringify(p)!==JSON.stringify(nl)?nl:p);}
       if(Array.isArray(d.expenses))setExpenses(p=>JSON.stringify(p)!==JSON.stringify(d.expenses)?d.expenses:p);
       if(Array.isArray(d.orders))setOrders(p=>JSON.stringify(p)!==JSON.stringify(d.orders)?d.orders:p);
       if(Array.isArray(d.tasks))setTasks(p=>JSON.stringify(p)!==JSON.stringify(d.tasks)?d.tasks:p);
       if(Array.isArray(d.clusters))setClusters(p=>JSON.stringify(p)!==JSON.stringify(d.clusters)?d.clusters:p);
+      if(d.weekPlan&&typeof d.weekPlan==="object")setWeekPlan(p=>JSON.stringify(p)!==JSON.stringify(d.weekPlan)?d.weekPlan:p);
     });
   },[]);
   
@@ -235,6 +251,7 @@ function App(){
   useEffect(()=>{if(fbLoaded)sv("vnb13_orders",orders)},[orders,fbLoaded]);
   useEffect(()=>{if(fbLoaded)sv("vnb13_tasks",tasks)},[tasks,fbLoaded]);
   useEffect(()=>{if(fbLoaded)sv("vnb13_clusters",clusters)},[clusters,fbLoaded]);
+  useEffect(()=>{if(fbLoaded)sv("vnb13_weekPlan",weekPlan)},[weekPlan,fbLoaded]);
 
   // Auto daily backup
   useEffect(()=>{
@@ -318,6 +335,7 @@ function App(){
   const tabs=[
     {id:"dashboard",l:"ראשי",i:"🏠"},{id:"inventory",l:"מלאי",i:"📦"},
     {id:"sales",l:"מכירות",i:"💰"},{id:"orders",l:"הזמנות",i:"📋"},
+    {id:"weekplan",l:"תכנון שבועי",i:"🗓️"},
     {id:"geo",l:"גיאוגרפי",i:"🗺️"},{id:"customers",l:"לקוחות",i:"👥"},
     {id:"leads",l:"לידים",i:"🎯"},{id:"tasks",l:"משימות",i:"✅"},
     {id:"expenses",l:"הוצאות",i:"💳"},{id:"calendar",l:"יומן",i:"📅"},
@@ -538,6 +556,7 @@ function App(){
   // ======================== ORDERS ========================
   const Orders=()=>{
     const[fl,setFl]=useState("all");
+    const[selected,setSelected]=useState(new Set());
     const sorted=useMemo(()=>{
       let r=[...orders].sort((a,b)=>a.date.localeCompare(b.date));
       if(fl==="open")r=r.filter(o=>o.status!=="סופק");
@@ -545,7 +564,27 @@ function App(){
       return r;
     },[orders,fl]);
     const sb=s=>({"ממתין":"b-w","בהכנה":"b-i","נשלח":"b-p","סופק":"b-s"}[s]||"b-w");
-    // Summary: quantities by product + total cost
+    
+    const toggleSel=(id,e)=>{e.stopPropagation();setSelected(p=>{const n=new Set(p);if(n.has(id))n.delete(id);else n.add(id);return n})};
+    const selectAll=()=>setSelected(new Set(sorted.map(o=>o.id)));
+    const clearSel=()=>setSelected(new Set());
+    
+    // Summary of SELECTED orders
+    const selSummary=useMemo(()=>{
+      const m={};let total=0;
+      const selOrders=orders.filter(o=>selected.has(o.id));
+      selOrders.forEach(o=>o.items.forEach(i=>{
+        if(+i.qty===0)return;
+        const p=gp(i.productId);if(!p)return;
+        if(!m[i.productId])m[i.productId]={name:p.name,cartons:0,boxes:0};
+        if(i.unitType==="box")m[i.productId].boxes+=+i.qty;
+        else m[i.productId].cartons+=+i.qty;
+        total+=calcItemTotal(i,products);
+      }));
+      return{items:Object.values(m).filter(x=>x.cartons>0||x.boxes>0),total,count:selOrders.length,orders:selOrders};
+    },[selected,orders,products]);
+    
+    // Summary: quantities by product + total cost (all open)
     const openOrders=orders.filter(o=>o.status!=="סופק");
     const orderSummary=useMemo(()=>{
       const m={};let total=0;
@@ -559,30 +598,80 @@ function App(){
       }));
       return{items:Object.values(m).filter(x=>x.cartons>0||x.boxes>0),total};
     },[openOrders,products]);
+    
+    const copySelectedCargo=()=>{
+      if(selSummary.items.length===0){alert("לא נבחרו הזמנות");return}
+      let txt=`📦 *רשימת קטיף סחורה - ${selSummary.count} הזמנות:*\n\n`;
+      selSummary.items.forEach(item=>{
+        txt+=`${item.name}: ${item.cartons>0?item.cartons+" קרט'":""}${item.cartons>0&&item.boxes>0?" + ":""}${item.boxes>0?item.boxes+" קופ'":""}\n`;
+      });
+      txt+=`\nסה"כ עלות: ${fmt(selSummary.total)} (${fmt(calcVat(selSummary.total))} כולל מע"מ)`;
+      navigator.clipboard.writeText(txt).then(()=>alert("✅ רשימת קטיף הועתקה!")).catch(()=>alert(txt));
+    };
+    
+    const copyDistribution=()=>{
+      if(selSummary.orders.length===0){alert("לא נבחרו הזמנות");return}
+      let txt=`🚚 *רשימת הפצה - ${selSummary.count} עצירות:*\n\n`;
+      selSummary.orders.forEach((o,idx)=>{
+        const c=gc(o.customerId);
+        if(!c)return;
+        txt+=`${idx+1}. ${c.name}`;
+        if(c.city&&c.city.trim())txt+=` - ${c.city.trim()}`;
+        if(c.address&&c.address.trim())txt+=` (${c.address.trim()})`;
+        if(c.phone)txt+=` - ${c.phone}`;
+        txt+=`\n   סטטוס: ${o.status}\n\n`;
+      });
+      navigator.clipboard.writeText(txt).then(()=>alert("✅ רשימת הפצה הועתקה!")).catch(()=>alert(txt));
+    };
+    
+    const exportRouteToGemini=async()=>{
+      if(selSummary.orders.length===0){alert("לא נבחרו הזמנות");return}
+      let txt=`תכנן לי מסלול הפצה יעיל ל-${selSummary.count} עצירות:\n\n`;
+      selSummary.orders.forEach((o,idx)=>{
+        const c=gc(o.customerId);
+        if(!c)return;
+        let addr="";
+        if(c.lat&&c.lng)addr=`${c.lat},${c.lng}`;
+        else addr=`${c.address||""} ${c.city||""}`.trim()||c.name;
+        txt+=`${idx+1}. ${c.name}${c.city?` - ${c.city.trim()}`:""}${addr?` (${addr})`:""}${c.phone?` - ${c.phone}`:""}\n`;
+      });
+      txt+="\nהחזר לי קישור Google Maps עם המסלול האופטימלי וזמן נסיעה משוער.";
+      if(navigator.share){try{await navigator.share({title:"מסלול הפצה",text:txt});return}catch(e){}}
+      try{await navigator.clipboard.writeText(txt);if(confirm("✅ הועתק!\n\nלפתוח Gemini?"))window.open("https://gemini.google.com/app","_blank");}
+      catch(e){const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);if(confirm("✅ הועתק!\n\nלפתוח Gemini?"))window.open("https://gemini.google.com/app","_blank");}
+    };
+    
     return(<div className="fi">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
         <h3 style={{fontWeight:700}}>📋 הזמנות ({orders.length})</h3>
         <button className="btn btn-p btn-sm" onClick={()=>openNew("order")}>+ הזמנה</button>
-        <button className="btn btn-o btn-sm" onClick={()=>{
-          const openO=orders.filter(o=>o.status!=="סופק");
-          const cargo={};
-          openO.forEach(o=>o.items.forEach(i=>{
-            if(+i.qty<=0)return;const p=gp(+i.productId);if(!p)return;
-            const k=p.name;if(!cargo[k])cargo[k]={boxes:0,cartons:0};
-            if(i.unitType==="box")cargo[k].boxes+=+i.qty;
-            else cargo[k].cartons+=+i.qty;
-          }));
-          let txt="📦 *רשימת סחורה להזמנות פתוחות:*\n\n";
-          Object.entries(cargo).forEach(([name,q])=>{
-            txt+=`${name}: ${q.cartons>0?q.cartons+" קרט\'":""}${q.boxes>0?" "+q.boxes+" קופ\'":""}\n`;
-          });
-          txt+=`\nסה"כ ${openO.length} הזמנות`;
-          navigator.clipboard.writeText(txt).then(()=>alert("רשימת סחורה הועתקה!")).catch(()=>alert(txt));
-        }}>📦 רשימת סחורה</button>
       </div>
       <div className="tb">{[["all","הכל"],["open","פתוחות"],["done","סופקו"]].map(([k,l])=>
         <button key={k} className={fl===k?"a":""} onClick={()=>setFl(k)}>{l}</button>)}</div>
-      {orderSummary.items.length>0&&<div className="card" style={{borderColor:"var(--inf)",marginBottom:8}}>
+      
+      <div style={{display:"flex",gap:4,marginBottom:6,flexWrap:"wrap",alignItems:"center"}}>
+        <button className="btn btn-o btn-sm" onClick={selectAll}>☑️ בחר הכל</button>
+        <button className="btn btn-o btn-sm" onClick={clearSel}>🔲 נקה</button>
+        {selected.size>0&&<span style={{fontSize:".78rem",fontWeight:600,color:"var(--pri)"}}>✓ {selected.size} נבחרו</span>}
+      </div>
+      
+      {selected.size>0&&<div className="card" style={{borderColor:"var(--pri)",marginBottom:8,background:"rgba(37,99,235,.06)"}}>
+        <div style={{fontWeight:700,fontSize:".85rem",marginBottom:6,color:"var(--pri)"}}>📦 סיכום {selected.size} הזמנות נבחרות</div>
+        {selSummary.items.map((item,i)=><div key={i} style={{fontSize:".78rem",display:"flex",justifyContent:"space-between",padding:"2px 0"}}>
+          <span>{item.name}</span>
+          <span style={{fontWeight:600}}>{item.cartons>0?`${item.cartons} קרטונים`:""}{item.cartons>0&&item.boxes>0?" + ":""}{item.boxes>0?`${item.boxes} קופסאות`:""}</span>
+        </div>)}
+        <div style={{borderTop:"1px solid var(--brd)",marginTop:4,paddingTop:4,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:".8rem"}}>
+          <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(selSummary.total)} | {fmt(calcVat(selSummary.total))} כולל מע"מ</span>
+        </div>
+        <div style={{display:"flex",gap:4,marginTop:8,flexWrap:"wrap"}}>
+          <button className="btn btn-p btn-sm" onClick={copySelectedCargo}>📦 קטיף סחורה</button>
+          <button className="btn btn-o btn-sm" onClick={copyDistribution}>🚚 רשימת הפצה</button>
+          <button className="btn btn-o btn-sm" onClick={exportRouteToGemini}>✨ מסלול ל-Gemini</button>
+        </div>
+      </div>}
+      
+      {selected.size===0&&orderSummary.items.length>0&&<div className="card" style={{borderColor:"var(--inf)",marginBottom:8}}>
         <div style={{fontWeight:700,fontSize:".83rem",marginBottom:4,color:"var(--inf)"}}>📊 סיכום הזמנות פתוחות</div>
         {orderSummary.items.map((item,i)=><div key={i} style={{fontSize:".78rem",display:"flex",justifyContent:"space-between",padding:"2px 0"}}>
           <span>{item.name}</span>
@@ -592,11 +681,17 @@ function App(){
           <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(orderSummary.total)} | {fmt(calcVat(orderSummary.total))} כולל מע"מ</span>
         </div>
       </div>}
-      {sorted.map(o=>{const c=gc(o.customerId);const activeI=o.items.filter(i=>+i.qty>0);const t=activeI.reduce((s,i)=>s+calcItemTotal(i,products),0);
-        return(<div className="row" key={o.id} onClick={()=>openEdit("order",o)}>
-          <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
-            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{o.date}{o.expectedDate?` • צפי: ${fmtD(o.expectedDate)}`:""}</div></div>
-          <div style={{textAlign:"left"}}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(t)}</div>
+      
+      {sorted.map(o=>{const c=gc(o.customerId);const activeI=o.items.filter(i=>+i.qty>0);const t=activeI.reduce((s,i)=>s+calcItemTotal(i,products),0);const isSel=selected.has(o.id);
+        return(<div className="row" key={o.id} style={{borderColor:isSel?"var(--pri)":"var(--brd)",background:isSel?"rgba(37,99,235,.06)":"transparent"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+            <span style={{fontSize:"1.1rem",cursor:"pointer"}} onClick={(e)=>toggleSel(o.id,e)}>{isSel?"☑️":"⬜"}</span>
+            <div style={{flex:1,cursor:"pointer"}} onClick={()=>openEdit("order",o)}>
+              <div style={{fontWeight:600}}>{c?.name||"—"}</div>
+              <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{o.date}{o.expectedDate?` • צפי: ${fmtD(o.expectedDate)}`:""}{c&&c.city&&c.city.trim()?` • ${c.city.trim()}`:""}</div>
+            </div>
+          </div>
+          <div style={{textAlign:"left"}} onClick={()=>openEdit("order",o)}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(t)}</div>
             <span className={`badge ${sb(o.status)}`}>{o.status}</span></div>
         </div>)
       })}
@@ -607,12 +702,12 @@ function App(){
   // ======================== CUSTOMERS ========================
   const Customers=()=>{
     const[sr,setSr]=useState("");const[cityFl,setCityFl]=useState("all");const[distFl,setDistFl]=useState("all");
-    const cities=useMemo(()=>{const s=new Set();customers.forEach(c=>{if(c.city)s.add(c.city)});return[...s].sort()},[customers]);
+    const cities=useMemo(()=>{const s=new Set();customers.forEach(c=>{if(c.city&&c.city.trim())s.add(c.city.trim())});return[...s].sort()},[customers]);
     const districts=useMemo(()=>{const s=new Set();customers.forEach(c=>{const d=getDistrict(c.city);if(d&&d!=="")s.add(d)});return[...s].sort()},[customers]);
     const filtered=useMemo(()=>{
       let r=customers;
       if(distFl!=="all")r=r.filter(c=>getDistrict(c.city)===distFl);
-      if(cityFl!=="all")r=r.filter(c=>c.city===cityFl);
+      if(cityFl!=="all")r=r.filter(c=>c.city&&c.city.trim()===cityFl);
       if(sr)r=r.filter(c=>c.name.includes(sr));
       return [...r].sort((a,b)=>{
         const aLast=a.visits&&a.visits.length?a.visits[a.visits.length-1].date:"0000";
@@ -639,12 +734,15 @@ function App(){
       {filtered.map(c=>{
         const cS=sales.filter(s=>s.customerId===c.id);
         const total=cS.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0);
-        return(<div className="row" key={c.id} onClick={()=>openEdit("customer",c)}>
-          <div><div style={{fontWeight:600}}>{c.name}</div>
-            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{c.paymentTerms}{c.city?` • ${c.city}`:""}{getDistrict(c.city)?` • ${getDistrict(c.city)}`:""}</div>
+        return(<div className="row" key={c.id} style={{position:"relative"}}>
+          <div style={{flex:1,cursor:"pointer"}} onClick={()=>openEdit("customer",c)}><div style={{fontWeight:600}}>{c.name}</div>
+            <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{c.paymentTerms}{c.city&&c.city.trim()?` • ${c.city.trim()}`:""}{getDistrict(c.city)?` • ${getDistrict(c.city)}`:""}</div>
             {c.visits&&c.visits.length>0&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(c.visits[c.visits.length-1].date)}</div>}
           </div>
-          <div style={{textAlign:"left"}}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(total)}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{cS.length} עסקאות</div></div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={(e)=>{e.stopPropagation();setPlannerPick({type:"customer",id:c.id,name:c.name,city:c.city?c.city.trim():""});setTab("weekplan")}} title="שבץ לתכנון שבועי" style={{background:"none",border:"none",fontSize:"1.1rem",cursor:"pointer",padding:"0 4px"}}>🗓️</button>
+            <div style={{textAlign:"left",cursor:"pointer"}} onClick={()=>openEdit("customer",c)}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(total)}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{cS.length} עסקאות</div></div>
+          </div>
         </div>)
       })}
     </div>);
@@ -661,12 +759,16 @@ function App(){
         <button className="btn btn-p btn-sm" onClick={()=>openNew("lead")}>+ ליד</button>
       </div>
       <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש ליד..."/><span className="ic">🔍</span></div>
-      {filtered.map(l=><div className="row" key={l.id} onClick={()=>openEdit("lead",l)}>
-        <div><div style={{fontWeight:600,fontSize:".83rem"}}>{l.name}</div>
+      {filtered.map(l=><div className="row" key={l.id} style={{position:"relative"}}>
+        <div style={{flex:1,cursor:"pointer"}} onClick={()=>openEdit("lead",l)}><div style={{fontWeight:600,fontSize:".83rem"}}>{l.name}</div>
+          <div style={{fontSize:".65rem",color:"var(--txt3)"}}>{l.city&&l.city.trim()?`📍 ${l.city.trim()}`:""}</div>
           {l.followUp&&<div style={{fontSize:".65rem",color:"var(--warn)"}}>מעקב: {fmtD(l.followUp)}</div>}
           {l.visits&&l.visits.length>0&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(l.visits[l.visits.length-1].date)}</div>}
         </div>
-        <span className={`badge ${sc[l.status]||"b-i"}`}>{l.status}</span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <button onClick={(e)=>{e.stopPropagation();setPlannerPick({type:"lead",id:l.id,name:l.name,city:l.city?l.city.trim():""});setTab("weekplan")}} title="שבץ לתכנון שבועי" style={{background:"none",border:"none",fontSize:"1.1rem",cursor:"pointer",padding:"0 4px"}}>🗓️</button>
+          <span className={`badge ${sc[l.status]||"b-i"}`} onClick={()=>openEdit("lead",l)} style={{cursor:"pointer"}}>{l.status}</span>
+        </div>
       </div>)}
     </div>);
   };
@@ -761,6 +863,237 @@ function App(){
           <button className="btn btn-d btn-sm" onClick={()=>delTask(t.id)}>🗑️</button>
         </div>)}
       </details>}
+    </div>);
+  };
+
+  // ======================== WEEK PLAN ========================
+  // Helper: get Sunday of a given week (start of work week in Israel)
+  const getWeekStart=(date)=>{
+    const d=new Date(date);
+    const day=d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    d.setDate(d.getDate()-day);
+    d.setHours(0,0,0,0);
+    return d;
+  };
+  const fmtDate=(d)=>{const x=new Date(d);return x.toISOString().split("T")[0]};
+  const dayNames=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  
+  const WeekPlan=()=>{
+    const[weekOffset,setWeekOffset]=useState(0); // 0=this week, 1=next, -1=prev
+    const[showAddModal,setShowAddModal]=useState(false);
+    const[addTargetDate,setAddTargetDate]=useState(null);
+    const[addType,setAddType]=useState("customer"); // or "lead"
+    const[addSearch,setAddSearch]=useState("");
+    const[addNote,setAddNote]=useState("");
+    const[addPicked,setAddPicked]=useState(null);
+    
+    const weekStart=useMemo(()=>{
+      const d=getWeekStart(new Date());
+      d.setDate(d.getDate()+weekOffset*7);
+      return d;
+    },[weekOffset]);
+    
+    const days=useMemo(()=>{
+      const arr=[];
+      for(let i=0;i<7;i++){
+        const d=new Date(weekStart);
+        d.setDate(d.getDate()+i);
+        arr.push({date:fmtDate(d),name:dayNames[i],dayNum:d.getDate(),month:d.getMonth()+1});
+      }
+      return arr;
+    },[weekStart]);
+    
+    const todayStr=fmtDate(new Date());
+    
+    const openAddModal=(date)=>{
+      setAddTargetDate(date);
+      setAddType("customer");
+      setAddSearch("");
+      setAddNote("");
+      setAddPicked(null);
+      setShowAddModal(true);
+    };
+    
+    // If plannerPick is set (came from Customers/Leads tab) - open modal automatically
+    useEffect(()=>{
+      if(plannerPick){
+        setAddTargetDate(days[0].date);
+        setAddType(plannerPick.type);
+        setAddPicked(plannerPick);
+        setAddSearch("");
+        setAddNote("");
+        setShowAddModal(true);
+      }
+    },[plannerPick]);
+    
+    const addToDay=()=>{
+      if(!addPicked||!addTargetDate)return;
+      const item={type:addPicked.type,id:addPicked.id,note:addNote.trim()};
+      setWeekPlan(prev=>{
+        const np={...prev};
+        if(!np[addTargetDate])np[addTargetDate]=[];
+        // Avoid exact duplicates
+        if(np[addTargetDate].some(x=>x.type===item.type&&x.id===item.id)){alert("כבר משובץ ביום זה");return prev}
+        np[addTargetDate]=[...np[addTargetDate],item];
+        return np;
+      });
+      setShowAddModal(false);
+      setPlannerPick(null);
+    };
+    
+    const removeFromDay=(date,idx)=>{
+      if(!confirm("להסיר מהיום?"))return;
+      setWeekPlan(prev=>{
+        const np={...prev};
+        if(!np[date])return np;
+        np[date]=np[date].filter((_,i)=>i!==idx);
+        if(np[date].length===0)delete np[date];
+        return np;
+      });
+    };
+    
+    const getItemDetails=(item)=>{
+      if(item.type==="customer"){
+        const c=customers.find(c=>c.id===item.id);
+        if(!c)return{name:"(לקוח לא נמצא)",city:"",icon:"👥",color:"var(--suc)"};
+        return{name:c.name,city:c.city?c.city.trim():"",icon:"👥",color:"var(--suc)",phone:c.phone||""};
+      } else {
+        const l=leads.find(l=>l.id===item.id);
+        if(!l)return{name:"(ליד לא נמצא)",city:"",icon:"🎯",color:"var(--warn)"};
+        return{name:l.name,city:l.city?l.city.trim():"",icon:"🎯",color:"var(--warn)",phone:l.phone||""};
+      }
+    };
+    
+    // Lists for picker modal
+    const filteredOptions=useMemo(()=>{
+      const list=addType==="customer"?customers:leads;
+      const q=addSearch.trim();
+      let r=[...list];
+      if(q)r=r.filter(x=>x.name&&x.name.includes(q));
+      return r.slice(0,30);
+    },[addType,addSearch,customers,leads]);
+    
+    const weekLabel=`${days[0].dayNum}/${days[0].month} - ${days[6].dayNum}/${days[6].month}`;
+    
+    return(<div className="fi">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
+        <h3 style={{fontWeight:700}}>🗓️ תכנון שבועי</h3>
+        <div style={{display:"flex",gap:4,alignItems:"center"}}>
+          <button className="btn btn-o btn-sm" onClick={()=>setWeekOffset(o=>o-1)}>→ קודם</button>
+          <button className="btn btn-o btn-sm" onClick={()=>setWeekOffset(0)}>השבוע</button>
+          <button className="btn btn-o btn-sm" onClick={()=>setWeekOffset(o=>o+1)}>הבא ←</button>
+        </div>
+      </div>
+      <div style={{textAlign:"center",fontSize:".82rem",color:"var(--txt2)",marginBottom:10,fontWeight:600}}>
+        {weekOffset===0?"השבוע":weekOffset===1?"השבוע הבא":weekOffset===-1?"השבוע שעבר":`${weekOffset>0?"+":""}${weekOffset} שבועות`} • {weekLabel}
+      </div>
+      
+      {days.map(day=>{
+        const items=weekPlan[day.date]||[];
+        const isToday=day.date===todayStr;
+        const exportToGemini=async()=>{
+          if(items.length===0){alert("אין שיבוצים ביום זה");return}
+          let txt=`תכנן לי מסלול נסיעה יעיל ליום ${day.name} ${day.dayNum}/${day.month}:\n\n`;
+          items.forEach((item,i)=>{
+            const det=getItemDetails(item);
+            const obj=item.type==="customer"?customers.find(c=>c.id===item.id):leads.find(l=>l.id===item.id);
+            let addr="";
+            if(obj){
+              if(obj.lat&&obj.lng)addr=`${obj.lat},${obj.lng}`;
+              else addr=`${obj.address||""} ${obj.city||""}`.trim()||det.name;
+            }
+            txt+=`${i+1}. ${det.icon} ${det.name}${det.city?` - ${det.city}`:""}${addr?` (${addr})`:""}${item.note?`\n   הערה: ${item.note}`:""}\n`;
+          });
+          txt+="\nהחזר לי קישור Google Maps עם המסלול האופטימלי וזמן נסיעה משוער בין הנקודות.";
+          if(navigator.share){try{await navigator.share({title:`מסלול ${day.name}`,text:txt});return}catch(e){}}
+          try{await navigator.clipboard.writeText(txt);if(confirm("✅ הועתק!\n\nלפתוח Gemini?"))window.open("https://gemini.google.com/app","_blank");}
+          catch(e){const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);if(confirm("✅ הועתק!\n\nלפתוח Gemini?"))window.open("https://gemini.google.com/app","_blank");}
+        };
+        return(<div key={day.date} className="card" style={{marginBottom:6,borderColor:isToday?"var(--pri)":"var(--brd)",background:isToday?"rgba(37,99,235,.04)":"transparent",padding:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontWeight:700,fontSize:".88rem",color:isToday?"var(--pri)":"var(--txt)"}}>
+              {isToday&&"📍 "}יום {day.name} • {day.dayNum}/{day.month}
+              {items.length>0&&<span style={{fontSize:".7rem",color:"var(--txt3)",marginRight:6,fontWeight:400}}>({items.length})</span>}
+            </div>
+            <div style={{display:"flex",gap:4}}>
+              {items.length>0&&<button className="btn btn-o btn-sm" onClick={exportToGemini} title="שתף ל-Gemini">✨</button>}
+              <button className="btn btn-p btn-sm" onClick={()=>openAddModal(day.date)}>+</button>
+            </div>
+          </div>
+          {items.length===0?<div style={{fontSize:".75rem",color:"var(--txt3)",textAlign:"center",padding:6}}>—</div>:
+            items.map((item,idx)=>{
+              const det=getItemDetails(item);
+              return(<div key={idx} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 8px",background:"var(--card)",borderRadius:6,marginBottom:3,fontSize:".8rem",borderRight:`3px solid ${det.color}`}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{det.icon} {det.name}</div>
+                  <div style={{fontSize:".68rem",color:"var(--txt3)"}}>
+                    {det.city&&`📍 ${det.city}`}
+                    {item.note&&` • ${item.note}`}
+                  </div>
+                </div>
+                <button onClick={()=>removeFromDay(day.date,idx)} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1rem",color:"var(--dan)",padding:"0 4px"}}>✕</button>
+              </div>);
+            })
+          }
+        </div>);
+      })}
+      
+      {showAddModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:10}} onClick={()=>{setShowAddModal(false);setPlannerPick(null)}}>
+        <div className="card" style={{maxWidth:400,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:14}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontWeight:700,fontSize:".95rem"}}>שיבוץ ל{addTargetDate&&` ${dayNames[new Date(addTargetDate).getDay()]} ${new Date(addTargetDate).getDate()}/${new Date(addTargetDate).getMonth()+1}`}</div>
+            <button onClick={()=>{setShowAddModal(false);setPlannerPick(null)}} style={{background:"none",border:"none",fontSize:"1.2rem",cursor:"pointer"}}>✕</button>
+          </div>
+          
+          {/* Date selector */}
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>יום בשבוע:</div>
+            <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+              {days.map(d=><button key={d.date} className={`btn btn-sm ${addTargetDate===d.date?"btn-p":"btn-o"}`} onClick={()=>setAddTargetDate(d.date)}>{d.name.substring(0,1)} {d.dayNum}/{d.month}</button>)}
+            </div>
+          </div>
+          
+          {/* Type selector */}
+          <div style={{display:"flex",gap:4,marginBottom:8}}>
+            <button className={`btn btn-sm ${addType==="customer"?"btn-p":"btn-o"}`} style={{flex:1}} onClick={()=>{setAddType("customer");setAddPicked(null)}}>👥 לקוחות</button>
+            <button className={`btn btn-sm ${addType==="lead"?"btn-p":"btn-o"}`} style={{flex:1}} onClick={()=>{setAddType("lead");setAddPicked(null)}}>🎯 לידים</button>
+          </div>
+          
+          {/* Picked item (when coming from another tab) */}
+          {addPicked&&<div style={{padding:8,background:"rgba(37,99,235,.08)",borderRadius:6,marginBottom:8,fontSize:".82rem"}}>
+            <div style={{fontWeight:600}}>נבחר: {addType==="customer"?"👥":"🎯"} {addPicked.name}</div>
+            {addPicked.city&&<div style={{fontSize:".7rem",color:"var(--txt3)"}}>📍 {addPicked.city}</div>}
+            <button className="btn btn-o btn-sm" style={{marginTop:4}} onClick={()=>setAddPicked(null)}>בחר אחר</button>
+          </div>}
+          
+          {/* Search & list */}
+          {!addPicked&&<>
+            <input type="text" placeholder="🔍 חפש..." value={addSearch} onChange={e=>setAddSearch(e.target.value)} style={{width:"100%",padding:"6px 8px",marginBottom:6,border:"1px solid var(--brd)",borderRadius:6,fontSize:".85rem",background:"var(--card)",color:"var(--txt)"}}/>
+            <div style={{maxHeight:200,overflowY:"auto",border:"1px solid var(--brd)",borderRadius:6,marginBottom:8}}>
+              {filteredOptions.length===0?<div style={{padding:10,textAlign:"center",color:"var(--txt3)",fontSize:".8rem"}}>לא נמצא</div>:
+                filteredOptions.map(x=>{
+                  const city=x.city?x.city.trim():"";
+                  return(<div key={x.id} onClick={()=>setAddPicked({type:addType,id:x.id,name:x.name,city})} style={{padding:"6px 8px",borderBottom:"1px solid var(--brd)",cursor:"pointer",fontSize:".82rem"}}>
+                    <div style={{fontWeight:600}}>{x.name}</div>
+                    {city&&<div style={{fontSize:".68rem",color:"var(--txt3)"}}>📍 {city}</div>}
+                  </div>);
+                })
+              }
+            </div>
+          </>}
+          
+          {/* Note */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>הערה (לא חובה):</div>
+            <input type="text" value={addNote} onChange={e=>setAddNote(e.target.value)} placeholder="לדוגמה: פגישה, איסוף תשלום..." style={{width:"100%",padding:"6px 8px",border:"1px solid var(--brd)",borderRadius:6,fontSize:".85rem",background:"var(--card)",color:"var(--txt)"}}/>
+          </div>
+          
+          <div style={{display:"flex",gap:4}}>
+            <button className="btn btn-p" style={{flex:1}} onClick={addToDay} disabled={!addPicked}>שבץ</button>
+            <button className="btn btn-o" onClick={()=>{setShowAddModal(false);setPlannerPick(null)}}>ביטול</button>
+          </div>
+        </div>
+      </div>}
     </div>);
   };
 
@@ -905,20 +1238,30 @@ function App(){
         </div>
         <div style={{display:"flex",gap:4,marginTop:6}}>
           <button className="btn btn-p btn-sm" style={{flex:1}} onClick={()=>buildRoute("gmaps")}>🗺️ Google Maps</button>
-          <button className="btn btn-o btn-sm" style={{flex:1}} onClick={()=>{
+          <button className="btn btn-o btn-sm" style={{flex:1}} onClick={async()=>{
             const stops=filtered.filter(b=>selected.has(`${b.type}-${b.id}`));
             if(!stops.length){alert("בחר עצירות");return}
-            let txt="תכנן לי מסלול נסיעה יעיל בין הנקודות הבאות:\n";
+            let txt="תכנן לי מסלול נסיעה יעיל בין הנקודות הבאות:\n\n";
             stops.forEach((b,i)=>{
-              const addr=b.lat&&b.lng?`${b.lat},${b.lng}`:`${b.address||""} ${b.city||""} ${b.name}`.trim();
-              txt+=`${i+1}. ${b.name} - ${addr}\n`;
+              const addr=b.lat&&b.lng?`${b.lat},${b.lng}`:`${b.address||""} ${b.city||""}`.trim()||b.name;
+              txt+=`${i+1}. ${b.name} - ${addr}${b.lat&&b.lng?` (נ"צ: ${b.lat},${b.lng})`:""}\n`;
             });
             if(routeStart.trim())txt+=`\nנקודת התחלה: ${routeStart}\n`;
             if(routeEnd.trim())txt+=`נקודת סיום: ${routeEnd}\n`;
-            navigator.clipboard.writeText(txt).then(()=>alert("הועתק! הדבק ב-Gemini")).catch(()=>{
-              const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);alert("הועתק! הדבק ב-Gemini");
-            });
-          }}>📋 העתק ל-Gemini</button>
+            txt+="\nהחזר לי קישור Google Maps עם המסלול האופטימלי וזמן נסיעה משוער.";
+            // Try Web Share API first (iOS/mobile)
+            if(navigator.share){
+              try{await navigator.share({title:"מסלול נסיעה",text:txt});return}catch(e){}
+            }
+            // Fallback: copy + open Gemini
+            try{
+              await navigator.clipboard.writeText(txt);
+              if(confirm("✅ הועתק ללוח!\n\nלפתוח את Gemini עכשיו?"))window.open("https://gemini.google.com/app","_blank");
+            }catch(e){
+              const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+              if(confirm("✅ הועתק! לפתוח את Gemini?"))window.open("https://gemini.google.com/app","_blank");
+            }
+          }}>✨ שתף ל-Gemini</button>
           <button className="btn btn-p btn-sm" style={{flex:1}} onClick={()=>buildRoute("waze")}>🚗 Waze</button>
         </div>
       </div>}
@@ -1773,6 +2116,7 @@ function App(){
       {tab==="geo"&&<Geo/>}
       {tab==="tasks"&&<Tasks/>}
       {tab==="planner"&&<Planner/>}
+      {tab==="weekplan"&&<WeekPlan/>}
       {tab==="calendar"&&<Calendar/>}
       {tab==="reports"&&<Reports/>}
       {tab==="settings"&&<Settings/>}
