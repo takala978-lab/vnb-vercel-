@@ -1720,6 +1720,29 @@ function App(){
 
   // ======================== RENDER ========================
   const isPos=pData.profit>=0;
+  
+  // Loading screen - hides stale localStorage data until Firebase finishes loading
+  if(!fbLoaded){
+    return(<div style={{
+      position:"fixed",inset:0,
+      display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",
+      background:"var(--bg)",color:"var(--txt)",
+      gap:20,zIndex:9999
+    }}>
+      <div style={{
+        width:60,height:60,
+        border:"4px solid var(--brd)",
+        borderTopColor:"var(--pri)",
+        borderRadius:"50%",
+        animation:"spin 1s linear infinite"
+      }}/>
+      <div style={{fontSize:"1.1rem",fontWeight:600,color:"var(--pri)"}}>VNB</div>
+      <div style={{fontSize:".9rem",color:"var(--txt2)"}}>☁️ טוען נתונים מהענן...</div>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+    </div>);
+  }
+  
   return(<div>
     <div className="hdr">
       <div style={{textAlign:"right"}}><div style={{fontWeight:800,color:"var(--pri)",fontSize:"1.05rem"}}>VNB</div><div style={{fontSize:".62rem",color:"var(--txt3)"}}>VNB</div></div>
@@ -1739,7 +1762,6 @@ function App(){
       <span className={`badge ${isPos?"b-s":"b-d"}`}>{pData.margin.toFixed(1)}%</span>
     </div>
     <div className="pg">
-      {!fbLoaded&&<div style={{textAlign:"center",padding:20,color:"var(--pri)"}}>☁️ מסנכרן נתונים...</div>}
       {tab!=="dashboard"&&<div style={{marginBottom:4}}><button onClick={()=>setTab("dashboard")} style={{background:"none",border:"none",fontSize:"1rem",cursor:"pointer",color:"var(--pri)",padding:0}}>→ חזרה לראשי</button></div>}
       {tab==="dashboard"&&<Dashboard/>}
       {tab==="inventory"&&<Inventory/>}
