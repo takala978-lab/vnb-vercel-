@@ -155,15 +155,15 @@ function sendEmail(to,subject,body){
 // ============================================================
 function App(){
   const[tab,setTab]=useState("dashboard");
-  const[products,setProducts]=useState(()=>ld("vnb12_products",DP));
-  const[inventory,setInventory]=useState(()=>ld("vnb12_inventory",DI));
-  const[customers,setCustomers]=useState(()=>ld("vnb12_customers",DC));
-  const[sales,setSales]=useState(()=>ld("vnb12_sales",DS));
-  const[leads,setLeads]=useState(()=>ld("vnb12_leads",DL));
-  const[expenses,setExpenses]=useState(()=>ld("vnb12_expenses",DE));
-  const[orders,setOrders]=useState(()=>ld("vnb12_orders",DO));
-  const[tasks,setTasks]=useState(()=>ld("vnb12_tasks",[]));
-  const[clusters,setClusters]=useState(()=>ld("vnb12_clusters",[{name:"פזורה",cities:["רהט","חורה","לקיה","כסייפה","שגב שלום","תל שבע","ערד"]},{name:"שפלה",cities:["רמלה","לוד","גדרה","יבנה","נס ציונה","רחובות","מודיעין","בית שמש"]}]));
+  const[products,setProducts]=useState(()=>ld("vnb13_products",DP));
+  const[inventory,setInventory]=useState(()=>ld("vnb13_inventory",DI));
+  const[customers,setCustomers]=useState(()=>ld("vnb13_customers",DC));
+  const[sales,setSales]=useState(()=>ld("vnb13_sales",DS));
+  const[leads,setLeads]=useState(()=>ld("vnb13_leads",DL));
+  const[expenses,setExpenses]=useState(()=>ld("vnb13_expenses",DE));
+  const[orders,setOrders]=useState(()=>ld("vnb13_orders",DO));
+  const[tasks,setTasks]=useState(()=>ld("vnb13_tasks",[]));
+  const[clusters,setClusters]=useState(()=>ld("vnb13_clusters",[{name:"פזורה",cities:["רהט","חורה","לקיה","כסייפה","שגב שלום","תל שבע","ערד"]},{name:"שפלה",cities:["רמלה","לוד","גדרה","יבנה","נס ציונה","רחובות","מודיעין","בית שמש"]}]));
   const[modal,setModal]=useState(null);
   const[editItem,setEditItem]=useState(null);
   const[pp,setPp]=useState("month");
@@ -172,7 +172,7 @@ function App(){
   // Firebase real-time sync
   const[fbLoaded,setFbLoaded]=useState(false);
   useEffect(()=>{
-    const VER="vnb12";
+    const VER="vnb13";
     if(!fbDB){setFbLoaded(true);return}
     fbDB.ref("vnb/_ver").once("value").then(snap=>{
       const remoteVer=snap.val();
@@ -220,23 +220,23 @@ function App(){
       if(d.tasks)setTasks(p=>JSON.stringify(p)!==JSON.stringify(d.tasks)?d.tasks:p);
     });
   },[]);
-  useEffect(()=>{sv("vnb12_products",products)},[products]);
-  useEffect(()=>{sv("vnb12_inventory",inventory)},[inventory]);
-  useEffect(()=>{sv("vnb12_customers",customers)},[customers]);
-  useEffect(()=>{sv("vnb12_sales",sales)},[sales]);
-  useEffect(()=>{sv("vnb12_leads",leads)},[leads]);
-  useEffect(()=>{sv("vnb12_expenses",expenses)},[expenses]);
-  useEffect(()=>{sv("vnb12_orders",orders)},[orders]);
-  useEffect(()=>{sv("vnb12_tasks",tasks)},[tasks]);
-  useEffect(()=>{sv("vnb12_clusters",clusters)},[clusters]);
+  useEffect(()=>{sv("vnb13_products",products)},[products]);
+  useEffect(()=>{sv("vnb13_inventory",inventory)},[inventory]);
+  useEffect(()=>{sv("vnb13_customers",customers)},[customers]);
+  useEffect(()=>{sv("vnb13_sales",sales)},[sales]);
+  useEffect(()=>{sv("vnb13_leads",leads)},[leads]);
+  useEffect(()=>{sv("vnb13_expenses",expenses)},[expenses]);
+  useEffect(()=>{sv("vnb13_orders",orders)},[orders]);
+  useEffect(()=>{sv("vnb13_tasks",tasks)},[tasks]);
+  useEffect(()=>{sv("vnb13_clusters",clusters)},[clusters]);
 
   // Auto daily backup
   useEffect(()=>{
     const today=new Date().toISOString().split("T")[0];
-    if(localStorage.getItem("vnb12_lb")!==today){
-      const b=ld("vnb12_bk",[]);
+    if(localStorage.getItem("vnb13_lb")!==today){
+      const b=ld("vnb13_bk",[]);
       b.unshift({date:new Date().toISOString(),type:"auto",data:{products,inventory,customers,sales,leads,expenses,orders}});
-      while(b.length>7)b.pop();sv("vnb12_bk",b);localStorage.setItem("vnb12_lb",today);
+      while(b.length>7)b.pop();sv("vnb13_bk",b);localStorage.setItem("vnb13_lb",today);
     }
   },[]);
 
@@ -288,8 +288,8 @@ function App(){
   const impD=e=>{
     const f=e.target.files[0];if(!f)return;
     if(!confirm("לטעון גיבוי? גיבוי נוכחי יישמר.")){e.target.value="";return}
-    const bk=ld("vnb12_bk",[]);bk.unshift({date:new Date().toISOString(),type:"pre-import",data:{products,inventory,customers,sales,leads,expenses,orders}});
-    while(bk.length>7)bk.pop();sv("vnb12_bk",bk);
+    const bk=ld("vnb13_bk",[]);bk.unshift({date:new Date().toISOString(),type:"pre-import",data:{products,inventory,customers,sales,leads,expenses,orders}});
+    while(bk.length>7)bk.pop();sv("vnb13_bk",bk);
     const r=new FileReader();r.onload=ev=>{try{
       const d=JSON.parse(ev.target.result);
       if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
@@ -300,7 +300,7 @@ function App(){
     }catch(err){alert("שגיאה")}};r.readAsText(f);e.target.value="";
   };
   const restoreB=idx=>{
-    const b=ld("vnb12_bk",[]);if(!b[idx])return;
+    const b=ld("vnb13_bk",[]);if(!b[idx])return;
     if(!confirm(`לשחזר גיבוי מ-${new Date(b[idx].date).toLocaleString("he-IL")}?`))return;
     const d=b[idx].data;
     if(d.products)setProducts(d.products);if(d.inventory)setInventory(d.inventory);
@@ -944,8 +944,8 @@ function App(){
     const dayNames=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
     const taskTypes=[{k:"visit",l:"ביקור",i:"👥"},{k:"delivery",l:"אספקה",i:"🚚"},{k:"collection",l:"גבייה",i:"💳"},{k:"other",l:"אחר",i:"📌"}];
     const[weekStart,setWeekStart]=useState(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d.toISOString().split("T")[0]});
-    const[plan,setPlan]=useState(()=>ld("vnb12_planner",{}));
-    useEffect(()=>{sv("vnb12_planner",plan)},[plan]);
+    const[plan,setPlan]=useState(()=>ld("vnb13_planner",{}));
+    useEffect(()=>{sv("vnb13_planner",plan)},[plan]);
     const days=Array.from({length:6},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d.toISOString().split("T")[0]});
     const prevWeek=()=>{const d=new Date(weekStart);d.setDate(d.getDate()-7);setWeekStart(d.toISOString().split("T")[0])};
     const nextWeek=()=>{const d=new Date(weekStart);d.setDate(d.getDate()+7);setWeekStart(d.toISOString().split("T")[0])};
@@ -1229,7 +1229,7 @@ function App(){
 
   // ======================== SETTINGS ========================
   const Settings=()=>{
-    const ir=useRef(null);const bk=ld("vnb12_bk",[]);
+    const ir=useRef(null);const bk=ld("vnb13_bk",[]);
     return(<div className="fi">
       <h3 style={{fontWeight:700,marginBottom:12}}>⚙️ הגדרות</h3>
       <div className="card" style={{background:"linear-gradient(135deg,#1a2a1a,#1a1f2b)"}}>
@@ -1262,8 +1262,8 @@ function App(){
       </div>
       <button className="btn btn-d" style={{width:"100%",marginTop:8}} onClick={()=>{
         if(!confirm("למחוק הכל? גיבוי יישמר."))return;
-        const b=ld("vnb12_bk",[]);b.unshift({date:new Date().toISOString(),type:"pre-reset",data:{products,inventory,customers,sales,leads,expenses,orders}});sv("vnb12_bk",b);
-        ["vnb12_products","vnb12_inventory","vnb12_customers","vnb12_sales","vnb12_leads","vnb12_expenses","vnb12_orders"].forEach(k=>localStorage.removeItem(k));location.reload();
+        const b=ld("vnb13_bk",[]);b.unshift({date:new Date().toISOString(),type:"pre-reset",data:{products,inventory,customers,sales,leads,expenses,orders}});sv("vnb13_bk",b);
+        ["vnb13_products","vnb13_inventory","vnb13_customers","vnb13_sales","vnb13_leads","vnb13_expenses","vnb13_orders"].forEach(k=>localStorage.removeItem(k));location.reload();
       }}>🗑️ איפוס</button>
     </div>);
   };
@@ -1760,6 +1760,9 @@ function App(){
     {modal==="customer"&&<CustModal/>}
     {modal==="lead"&&<LeadModal/>}
     {modal==="expense"&&<ExpModal/>}
+    <div style={{position:"fixed",bottom:56,left:"50%",transform:"translateX(-50%)",fontSize:".55rem",color:fbLoaded?"var(--suc)":"var(--warn)",background:"var(--card)",padding:"1px 8px",borderRadius:10,border:"1px solid var(--brd)",zIndex:5}}>
+      {fbDB?"☁️ Firebase":"💾 מקומי"} {fbLoaded?"✓":"..."}
+    </div>
   </div>);
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
