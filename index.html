@@ -2135,23 +2135,25 @@ function App(){
           </div>)}
         </details>}
       </div>}
-      {isE&&<div style={{display:"flex",gap:5}}>
-        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
-        {isE&&f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
-        {isE&&!f.archived&&<button className="btn btn-o btn-sm" onClick={()=>{
+      {isE&&<><div style={{display:"flex",gap:5,marginBottom:5}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>עדכן</button>
+        {f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
+        <button className="btn btn-d btn-sm" onClick={del}>🗑️</button>
+      </div>
+      <div style={{display:"flex",gap:5}}>
+        {!f.archived&&<button className="btn btn-o btn-sm" style={{flex:1}} onClick={()=>{
           if(!confirm("לסמן את "+f.name+" כנוטש?\nהלקוח לא ייספר בסך הלקוחות והנתונים יישמרו.\nאפשר להחזיר אותו בכל עת."))return;
           const updated={...f,archived:true,archivedDate:new Date().toISOString().split("T")[0]};
           setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
           setModal(null);
         }}>❌ סמן כנוטש</button>}
-        {isE&&f.archived&&<button className="btn btn-s btn-sm" onClick={()=>{
+        {f.archived&&<button className="btn btn-s" style={{flex:1}} onClick={()=>{
           if(!confirm("להחזיר את "+f.name+" ללקוחות פעילים?"))return;
           const updated={...f};delete updated.archived;delete updated.archivedDate;
           setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
           setModal(null);
-        }}>♻️ החזר ללקוחות</button>}
-        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
-      </div>}
+        }}>♻️ החזר ללקוחות פעילים</button>}
+      </div></>}
       {!isE&&<div style={{display:"flex",gap:5}}>
         <button className="btn btn-p" style={{flex:1}} onClick={save}>הוסף</button>
       </div>}
