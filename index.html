@@ -394,7 +394,7 @@ function App(){
       </div>
       <div className="g2" style={{marginBottom:8}}>
         <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("orders")}><div className="l">הזמנות פתוחות</div><div className="v" style={{color:"var(--inf)"}}>{orders.filter(o=>o.status!=="סופק").length}</div></div>
-        <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("customers")}><div className="l">לקוחות</div><div className="v">{customers.length}</div></div>
+        <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("customers")}><div className="l">לקוחות</div><div className="v">{customers.filter(c=>!c.archived).length}</div>{customers.filter(c=>c.archived).length>0&&<div className="s" style={{color:"var(--warn)"}}>❌ {customers.filter(c=>c.archived).length} נוטשים</div>}</div>
       </div>
       <div className="g2" style={{marginBottom:12}}>
         <button className="btn btn-o" style={{width:"100%"}} onClick={()=>openNew("customer")}>+ לקוח</button>
@@ -739,7 +739,6 @@ function App(){
     const districts=useMemo(()=>{const s=new Set();customers.forEach(c=>{const d=getDistrict(c.city);if(d&&d!=="")s.add(d)});return[...s].sort()},[customers]);
     
     // חישוב מטריקות לכל לקוח
-    const ABANDONED_DAYS=90; // לקוח עם 2+ מכירות שלא קנה 90 יום = נטוש
     const customerStats=useMemo(()=>{
       const today=new Date();
       const m={};
@@ -755,10 +754,11 @@ function App(){
           const span=Math.floor((new Date(lastDate)-new Date(firstDate))/(1000*60*60*24));
           avgDays=Math.round(span/(count-1));
         }
+        // נטוש = רק לקוח שסומן ידנית. אין הגדרה אוטומטית.
         let type="none";
-        if(count===0)type="none";
+        if(c.archived)type="abandoned";
+        else if(count===0)type="none";
         else if(count===1)type="once";
-        else if(daysSinceLast!==null&&daysSinceLast>ABANDONED_DAYS)type="abandoned";
         else type="loyal";
         m[c.id]={count,revenue,firstDate,lastDate,daysSinceLast,avgDays,type};
       });
@@ -768,9 +768,13 @@ function App(){
     // סיכומי סוגי לקוחות
     const typeCounts=useMemo(()=>{
       const r={loyal:0,once:0,abandoned:0,none:0};
-      Object.values(customerStats).forEach(s=>{r[s.type]++});
+      Object.values(customerStats).forEach(s=>{if(r[s.type]!==undefined)r[s.type]++});
       return r;
     },[customerStats]);
+    
+    // ספירת לקוחות פעילים (לא נטושים) לתצוגה - נטוש = abandoned (ידני או אוטומטי)
+    const abandonedCount=typeCounts.abandoned;
+    const activeCustomersCount=customers.length-abandonedCount;
     
     const filtered=useMemo(()=>{
       let r=customers;
@@ -786,12 +790,10 @@ function App(){
         if(sortBy==="revenue")return (sB.revenue||0)-(sA.revenue||0);
         if(sortBy==="count")return (sB.count||0)-(sA.count||0);
         if(sortBy==="freq"){
-          // לקוחות עם תדירות גבוהה (avgDays נמוך) ראשונים; ללא תדירות בסוף
           const fA=sA.avgDays!==null&&sA.avgDays!==undefined?sA.avgDays:99999;
           const fB=sB.avgDays!==null&&sB.avgDays!==undefined?sB.avgDays:99999;
           return fA-fB;
         }
-        // recent - לפי ביקור אחרון או מכירה אחרונה
         const aLast=sA.lastDate||(a.visits&&a.visits.length?a.visits[a.visits.length-1].date:"0000");
         const bLast=sB.lastDate||(b.visits&&b.visits.length?b.visits[b.visits.length-1].date:"0000");
         return bLast.localeCompare(aLast);
@@ -802,13 +804,13 @@ function App(){
     const typeBadge=(type)=>{
       if(type==="loyal")return{label:"🟢 עקבי",color:"var(--suc)",bg:"rgba(34,197,94,.15)"};
       if(type==="once")return{label:"🔴 חד-פעמי",color:"var(--dan)",bg:"rgba(239,68,68,.12)"};
-      if(type==="abandoned")return{label:"🟡 נטוש",color:"var(--warn)",bg:"rgba(245,158,11,.15)"};
+      if(type==="abandoned")return{label:"❌ נוטש",color:"var(--warn)",bg:"rgba(245,158,11,.15)"};
       return{label:"⚪ לא קנה",color:"var(--txt3)",bg:"var(--bg)"};
     };
     
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <h3 style={{fontWeight:700}}>👥 לקוחות ({customers.length})</h3>
+        <h3 style={{fontWeight:700}}>👥 לקוחות ({activeCustomersCount}{abandonedCount>0?` + ${abandonedCount} נוטשים`:""})</h3>
         <button className="btn btn-p btn-sm" onClick={()=>openNew("customer")}>+ לקוח</button>
       </div>
       
@@ -818,7 +820,7 @@ function App(){
           <div className="l" style={{fontSize:".62rem"}}>🟢 עקביים</div><div className="v" style={{color:"var(--suc)",fontSize:"1rem"}}>{typeCounts.loyal}</div>
         </div>
         <div className="sc" style={{padding:"6px 4px",cursor:"pointer",borderColor:typeFl==="abandoned"?"var(--warn)":"var(--brd)"}} onClick={()=>setTypeFl(typeFl==="abandoned"?"all":"abandoned")}>
-          <div className="l" style={{fontSize:".62rem"}}>🟡 נטושים</div><div className="v" style={{color:"var(--warn)",fontSize:"1rem"}}>{typeCounts.abandoned}</div>
+          <div className="l" style={{fontSize:".62rem"}}>❌ נוטשים</div><div className="v" style={{color:"var(--warn)",fontSize:"1rem"}}>{typeCounts.abandoned}</div>
         </div>
       </div>
       <div className="g2" style={{marginBottom:8,gap:4}}>
@@ -1192,10 +1194,24 @@ function App(){
           
           {/* Date selector */}
           <div style={{marginBottom:8}}>
-            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>יום בשבוע:</div>
+            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>יום בשבוע הנוכחי:</div>
             <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
               {days.map(d=><button key={d.date} className={`btn btn-sm ${addTargetDate===d.date?"btn-p":"btn-o"}`} onClick={()=>setAddTargetDate(d.date)}>{d.name.substring(0,1)} {d.dayNum}/{d.month}</button>)}
             </div>
+            <div style={{fontSize:".72rem",color:"var(--txt3)",marginTop:6,marginBottom:3}}>או בחר תאריך אחר:</div>
+            <input type="date" value={addTargetDate||""} onChange={e=>{
+              const newDate=e.target.value;
+              if(!newDate)return;
+              setAddTargetDate(newDate);
+              // אם התאריך מחוץ לשבוע הנוכחי - הזז את הצפייה לשבוע המתאים
+              const sel=new Date(newDate+"T00:00:00");
+              const cur=new Date(weekStart);
+              const diffDays=Math.floor((sel-cur)/(1000*60*60*24));
+              if(diffDays<0||diffDays>=7){
+                const weeksDiff=Math.floor(diffDays/7);
+                setWeekOffset(o=>o+weeksDiff);
+              }
+            }} style={{width:"100%",padding:"6px 8px",border:"1px solid var(--brd)",borderRadius:6,fontSize:".85rem",background:"var(--card)",color:"var(--txt)"}}/>
           </div>
           
           {/* Type selector */}
@@ -1256,7 +1272,7 @@ function App(){
 
     const allBiz=useMemo(()=>{
       const items=[];
-      customers.forEach(c=>items.push({...c,type:"customer",icon:"👥",typeName:"לקוח"}));
+      customers.forEach(c=>{if(!c.archived)items.push({...c,type:"customer",icon:"👥",typeName:"לקוח"})});
       leads.forEach(l=>items.push({...l,type:"lead",icon:"🎯",typeName:"ליד"}));
       return items;
     },[customers,leads]);
@@ -1446,7 +1462,7 @@ function App(){
     const[addDay,setAddDay]=useState(null);
     const[addSr,setAddSr]=useState("");
     const[addType,setAddType]=useState("visit");
-    const allBiz=[...customers.map(c=>({...c,bType:"customer",bIcon:"👥"})),...leads.map(l=>({...l,bType:"lead",bIcon:"🎯"}))].sort((a,b)=>a.name.localeCompare(b.name));
+    const allBiz=[...customers.filter(c=>!c.archived).map(c=>({...c,bType:"customer",bIcon:"👥"})),...leads.map(l=>({...l,bType:"lead",bIcon:"🎯"}))].sort((a,b)=>a.name.localeCompare(b.name));
     const addToPlan=(day,biz)=>{
       const hasOrder=orders.some(o=>o.customerId===biz.id&&o.status!=="סופק");
       setPlan(p=>{const d=p[day]||[];if(d.some(x=>x.id===biz.id&&x.bType===biz.bType))return p;return{...p,[day]:[...d,{id:biz.id,bType:biz.bType,name:biz.name,city:biz.city||"",bIcon:biz.bIcon,taskType:addType,status:"planned",hasOrder,note:""}]}});
@@ -1670,7 +1686,7 @@ function App(){
     const openOrders=orders.filter(o=>o.status!=="סופק");
     let txt=`📊 *דוח שבועי VNB*\n`;
     txt+=`${fmtD(ws)} - ${fmtD(today.toISOString().split("T")[0])}\n\n`;
-    txt+=`👥 *לקוחות:* ${customers.length} | חדשים השבוע: ${newCusts.length}\n`;
+    txt+=`👥 *לקוחות:* ${customers.filter(c=>!c.archived).length} | חדשים השבוע: ${newCusts.length}\n`;
     txt+=`🎯 *לידים:* ${leads.length}\n`;
     txt+=`💰 *מכירות השבוע:* ${weekSales.length} עסקאות\n`;
     txt+=`   סה"כ: ${fmt(weekTotal)} כולל מע"מ\n`;
@@ -1752,7 +1768,7 @@ function App(){
       </div>}
       <div className="card" style={{marginTop:8}}>
         <div style={{fontWeight:600,marginBottom:4}}>📊 סטטיסטיקות</div>
-        <div className="g2" style={{fontSize:".8rem"}}><div>מוצרים: <strong>{products.length}</strong></div><div>לקוחות: <strong>{customers.length}</strong></div><div>מכירות: <strong>{sales.length}</strong></div><div>הזמנות: <strong>{orders.length}</strong></div><div>לידים: <strong>{leads.length}</strong></div><div>הוצאות: <strong>{expenses.length}</strong></div></div>
+        <div className="g2" style={{fontSize:".8rem"}}><div>מוצרים: <strong>{products.length}</strong></div><div>לקוחות: <strong>{customers.filter(c=>!c.archived).length}</strong>{customers.filter(c=>c.archived).length>0&&<span style={{fontSize:".7rem",color:"var(--txt3)"}}> (+{customers.filter(c=>c.archived).length} נוטשים)</span>}</div><div>מכירות: <strong>{sales.length}</strong></div><div>הזמנות: <strong>{orders.length}</strong></div><div>לידים: <strong>{leads.length}</strong></div><div>הוצאות: <strong>{expenses.length}</strong></div></div>
       </div>
       <button className="btn btn-d" style={{width:"100%",marginTop:8}} onClick={()=>{
         if(!confirm("למחוק הכל? גיבוי יישמר."))return;
@@ -2065,6 +2081,10 @@ function App(){
     };
     return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
       <h3>{isE?"עריכת לקוח":"לקוח חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
+      {isE&&f.archived&&<div style={{background:"rgba(245,158,11,.15)",padding:8,borderRadius:8,marginBottom:8,fontSize:".78rem",border:"1px solid var(--warn)"}}>
+        <strong style={{color:"var(--warn)"}}>❌ לקוח נוטש</strong>{f.archivedDate?` • סומן ב-${fmtD(f.archivedDate)}`:""}<br/>
+        <span style={{fontSize:".7rem",color:"var(--txt3)"}}>לא נספר בסה"כ לקוחות. לחץ "♻️ החזר ללקוחות" לשחזור.</span>
+      </div>}
       <div className="fg"><label>שם</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
       <div className="g2">
         <div className="fg"><label>טלפון</label><input value={f.phone} onChange={e=>u("phone",e.target.value)}/></div>
@@ -2115,11 +2135,26 @@ function App(){
           </div>)}
         </details>}
       </div>}
-      <div style={{display:"flex",gap:5}}>
+      {isE&&<div style={{display:"flex",gap:5}}>
         <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
         {isE&&f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
+        {isE&&!f.archived&&<button className="btn btn-o btn-sm" onClick={()=>{
+          if(!confirm("לסמן את "+f.name+" כנוטש?\nהלקוח לא ייספר בסך הלקוחות והנתונים יישמרו.\nאפשר להחזיר אותו בכל עת."))return;
+          const updated={...f,archived:true,archivedDate:new Date().toISOString().split("T")[0]};
+          setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
+          setModal(null);
+        }}>❌ סמן כנוטש</button>}
+        {isE&&f.archived&&<button className="btn btn-s btn-sm" onClick={()=>{
+          if(!confirm("להחזיר את "+f.name+" ללקוחות פעילים?"))return;
+          const updated={...f};delete updated.archived;delete updated.archivedDate;
+          setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
+          setModal(null);
+        }}>♻️ החזר ללקוחות</button>}
         {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
-      </div>
+      </div>}
+      {!isE&&<div style={{display:"flex",gap:5}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>הוסף</button>
+      </div>}
     </div></div>);
   };
 
