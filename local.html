@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VNB - בדיקת מכשיר מקומי</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;padding:20px;min-height:100vh}
+h1{font-size:20px;text-align:center;margin-bottom:8px;color:#ffc107}
+.sub{text-align:center;color:#aaa;font-size:13px;margin-bottom:24px}
+.card{background:#2a2a2a;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid #444}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;font-size:16px}
+.row:last-child{border-bottom:none}
+.label{color:#ccc}
+.val{font-weight:bold;font-size:20px;color:#4caf50}
+.val.zero{color:#f44336}
+.note{background:#0d47a1;color:#bbe;padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin-top:16px}
+.warn{background:#7c2d12;color:#fed7aa;padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin-top:16px}
+button{width:100%;padding:16px;background:#2196f3;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;margin-top:16px;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>🔍 בדיקת נתונים מקומיים</h1>
+<p class="sub">קורא בלבד את הזיכרון של הדפדפן הזה<br>לא נוגע ב-Firebase, לא משנה כלום</p>
+
+<div class="card">
+  <h3 style="color:#ffc107;margin-bottom:10px">📱 שמור בדפדפן זה (localStorage):</h3>
+  <div id="local"></div>
+</div>
+
+<div id="verdict"></div>
+
+<button onclick="copyData()" id="copyBtn" style="display:none">📋 העתק את כל הנתונים (גיבוי)</button>
+
+<script>
+let fullData = {};
+
+function check() {
+  const keys = {
+    customers: "לקוחות",
+    leads: "לידים",
+    sales: "מכירות",
+    orders: "הזמנות",
+    expenses: "הוצאות",
+    products: "מוצרים"
+  };
+  
+  let html = "";
+  let customerCount = 0;
+  
+  Object.keys(keys).forEach(k => {
+    let arr = [];
+    try {
+      const raw = localStorage.getItem("vnb13_" + k);
+      arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) arr = [];
+    } catch(e) { arr = []; }
+    fullData[k] = arr;
+    if (k === "customers") customerCount = arr.length;
+    const cls = arr.length > 0 ? "" : "zero";
+    html += `<div class="row"><span class="label">${keys[k]}:</span><span class="val ${cls}">${arr.length}</span></div>`;
+  });
+  
+  document.getElementById("local").innerHTML = html;
+  
+  // Verdict
+  const v = document.getElementById("verdict");
+  if (customerCount >= 100) {
+    v.className = "note";
+    v.innerHTML = `✅ <b>מצוין!</b> יש כאן ${customerCount} לקוחות - אלה כנראה הנתונים העדכניים מ-22.5!<br><br>לחץ על הכפתור למטה כדי לגבות אותם, ואז נשחזר אותם ל-Firebase.`;
+    document.getElementById("copyBtn").style.display = "block";
+  } else if (customerCount > 0) {
+    v.className = "warn";
+    v.innerHTML = `⚠️ יש כאן ${customerCount} לקוחות בלבד.<br><br>זה כנראה כבר נדרס ל-98 (הנתונים הישנים). הנתונים מ-22.5 כנראה לא כאן.<br><br>בכל זאת - לחץ על הכפתור לגבות, ליתר ביטחון.`;
+    document.getElementById("copyBtn").style.display = "block";
+  } else {
+    v.className = "warn";
+    v.innerHTML = `❌ אין נתונים מקומיים בדפדפן זה.`;
+  }
+}
+
+function copyData() {
+  const txt = JSON.stringify(fullData);
+  navigator.clipboard.writeText(txt).then(() => {
+    alert("✅ הנתונים הועתקו! פתח WhatsApp ושלח לעצמך, או הדבק בצ׳אט עם קלוד");
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    alert("✅ הנתונים הועתקו! פתח WhatsApp ושלח לעצמך");
+  });
+}
+
+window.addEventListener("load", check);
+</script>
+</body>
+</html>
