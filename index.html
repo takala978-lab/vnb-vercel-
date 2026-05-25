@@ -121,11 +121,34 @@ const DO=[{"_cn": "חמאיסה חומרי בניין בעיר", "customerId": 5
 
 // STORAGE & HELPERS
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+
+// Keys that hold critical record arrays - protected from accidental shrinking
+const PROTECTED_KEYS=["customers","sales","leads","orders","expenses","products","inventory"];
+
 function sv(k,v){
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
   if(fbDB){
     const fbKey=k.replace(/^vnb\d+_/,"");
-    try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){console.log("FB save err:",e)}
+    // Protection: for critical arrays, verify we're not overwriting MORE data with LESS
+    if(PROTECTED_KEYS.includes(fbKey)&&Array.isArray(v)){
+      fbDB.ref("vnb/"+fbKey).once("value").then(snap=>{
+        const remote=snap.val();
+        const remoteLen=Array.isArray(remote)?remote.length:0;
+        const localLen=v.length;
+        // If remote has significantly MORE records than what we're about to write, DON'T overwrite
+        // (this means another device saved newer data, or our state hasn't loaded yet)
+        if(remoteLen>localLen+2){
+          console.log(`🛡️ Blocked overwrite of ${fbKey}: remote=${remoteLen} > local=${localLen}. Skipping save to prevent data loss.`);
+          return;
+        }
+        fbDB.ref("vnb/"+fbKey).set(v).catch(e=>console.log("FB save err:",e));
+      }).catch(e=>{
+        // If check fails, save anyway (offline fallback)
+        fbDB.ref("vnb/"+fbKey).set(v).catch(e=>console.log("FB save err:",e));
+      });
+    } else {
+      try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){console.log("FB save err:",e)}
+    }
   }
 }
 const fmt=n=>`₪${(n||0).toLocaleString("he-IL",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
@@ -140,16 +163,6 @@ function calcItemTotal(item, products){
 }
 function calcSaleTotal(sale,prods){return sale.items.reduce((s,i)=>s+calcItemTotal(i,prods),0)}
 function calcVat(n){return Math.round(n*(1+VAT))}
-// סכום אפקטיבי של מכירה לסטטיסטיקות:
-// אם המכירה סומנה "שולם" והוזן paid>0 שונה מהסכום המקורי → לקחת את paid (גביה בפועל / הנחה)
-// בכל מקרה אחר → לקחת את הסכום המקורי כולל מע"מ
-function effectiveSaleTotal(sale,prods){
-  const grossWithVat=calcVat(calcSaleTotal(sale,prods));
-  if(sale.status==="שולם" && +sale.paid>0) return +sale.paid;
-  return grossWithVat;
-}
-// תצוגת מחיר עם מע"מ (גדול) ולפני מע"מ (קטן)
-const fmtVat=n=>`₪${Math.round((n||0)*(1+VAT)).toLocaleString("he-IL",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
 
 function sendWhatsApp(phone, text){
   const p=phone.replace(/[^0-9]/g,"");
@@ -197,21 +210,8 @@ function App(){
       });
     };
     
-    let loadDone=false;
-    
-    // Safety timeout: if Firebase doesn't respond within 6 seconds, fall back to localStorage
-    const timeoutId=setTimeout(()=>{
-      if(loadDone)return;
-      loadDone=true;
-      console.log("⚠️ Firebase timeout - using localStorage");
-      setFbLoaded(true);
-    },6000);
-    
     // Initial load from Firebase - source of truth
     fbDB.ref("vnb").once("value").then(snap=>{
-      if(loadDone)return;
-      loadDone=true;
-      clearTimeout(timeoutId);
       const d=snap.val();
       const hasData = d && (
         (Array.isArray(d.products)&&d.products.length>0) ||
@@ -220,7 +220,6 @@ function App(){
         (Array.isArray(d.orders)&&d.orders.length>0)
       );
       if(hasData){
-        // Firebase has real data - load it (it's the source of truth)
         if(Array.isArray(d.products))setProducts(d.products);
         if(Array.isArray(d.inventory))setInventory(d.inventory);
         if(Array.isArray(d.customers))setCustomers(normCities(d.customers));
@@ -233,22 +232,16 @@ function App(){
         if(d.weekPlan&&typeof d.weekPlan==="object")setWeekPlan(d.weekPlan);
         console.log("✅ Loaded from Firebase");
       } else {
-        // Firebase is empty - one-time bootstrap from code defaults
         console.log("🔄 Firebase empty, bootstrapping from defaults");
         const allData={products,inventory,customers,sales,leads,expenses,orders,tasks,clusters,weekPlan};
         fbDB.ref("vnb").set(allData).then(()=>console.log("✅ Bootstrap complete"));
       }
-      // Only AFTER load completes - enable auto-save
       setFbLoaded(true);
     }).catch(e=>{
-      if(loadDone)return;
-      loadDone=true;
-      clearTimeout(timeoutId);
       console.log("FB load err:",e);
-      setFbLoaded(true); // fall back to localStorage
+      setFbLoaded(true);
     });
     
-    // Listen for real-time changes from other devices
     let firstLoad=true;
     fbDB.ref("vnb").on("value",snap=>{
       if(firstLoad){firstLoad=false;return}
@@ -301,10 +294,9 @@ function App(){
   const gc=id=>customers.find(c=>c.id===id);
   const gp=id=>products.find(p=>p.id===id);
 
-  // Totals - totV הוא סך המכירות האפקטיבי (כולל מע"מ, מתחשב בגביה בפועל)
-  // totBV נשאר לפני מע"מ (לצורך הצגה משנית בלבד) - מחושב מהמקורי
+  // Totals
   const totBV=useMemo(()=>sales.reduce((s,sl)=>s+calcSaleTotal(sl,products),0),[sales,products]);
-  const totV=useMemo(()=>sales.reduce((s,sl)=>s+effectiveSaleTotal(sl,products),0),[sales,products]);
+  const totV=useMemo(()=>calcVat(totBV),[totBV]);
   const unpaid=useMemo(()=>sales.filter(s=>s.status!=="שולם"),[sales]);
   const unpaidT=useMemo(()=>unpaid.reduce((s,sl)=>{const t=calcVat(calcSaleTotal(sl,products));return s+t-(sl.paid||0)},0),[unpaid,products]);
 
@@ -394,7 +386,7 @@ function App(){
       </div>
       <div className="g2" style={{marginBottom:8}}>
         <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("orders")}><div className="l">הזמנות פתוחות</div><div className="v" style={{color:"var(--inf)"}}>{orders.filter(o=>o.status!=="סופק").length}</div></div>
-        <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("customers")}><div className="l">לקוחות</div><div className="v">{customers.filter(c=>!c.archived).length}</div>{customers.filter(c=>c.archived).length>0&&<div className="s" style={{color:"var(--warn)"}}>❌ {customers.filter(c=>c.archived).length} נוטשים</div>}</div>
+        <div className="sc" style={{cursor:"pointer"}} onClick={()=>setTab("customers")}><div className="l">לקוחות</div><div className="v">{customers.length}</div></div>
       </div>
       <div className="g2" style={{marginBottom:12}}>
         <button className="btn btn-o" style={{width:"100%"}} onClick={()=>openNew("customer")}>+ לקוח</button>
@@ -492,7 +484,7 @@ function App(){
         const balance=totalCartons-soldCartons;
         return(<div className="card" key={p.id} style={{borderColor:p.low?"var(--dan)":"var(--brd)"}} onClick={()=>openEdit("product",p)}>
           <div style={{fontWeight:700,fontSize:".88rem"}}>{p.name}</div>
-          <div style={{fontSize:".68rem",color:"var(--txt3)",marginBottom:4}}>{p.boxesPerCarton} קופ\'/קרטון | {cpp} קרט\'/משטח | מכירה: <strong style={{color:"var(--pri)"}}>{fmtVat(p.pricePerBox)}</strong> <span style={{color:"var(--txt3)"}}>({fmt(p.pricePerBox)} לפני מע"מ)</span></div>
+          <div style={{fontSize:".68rem",color:"var(--txt3)",marginBottom:4}}>{p.boxesPerCarton} קופ\'/קרטון | {cpp} קרט\'/משטח | מכירה: {fmt(p.pricePerBox)}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
             {showP&&<div style={{background:"var(--bg)",padding:6,borderRadius:8,textAlign:"center"}}>
               <div style={{fontSize:".64rem",color:"var(--txt3)"}}>🏗️ משטחים</div>
@@ -557,21 +549,20 @@ function App(){
       <div className="tb" style={{marginBottom:4}}>{[["all","כל המסמכים"],["חשבונית","חשבונית"],["noInvoice","ללא חשב\'"]].map(([k,l])=>
         <button key={k} className={docFl===k?"a":""} onClick={()=>setDocFl(k)}>{l}</button>)}</div>
       {months.map(([month,items])=>{
-        const mTotal=items.reduce((s,sl)=>s+effectiveSaleTotal(sl,products),0);
+        const mTotal=items.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0);
         const isOpen=openMonth===month;
         return(<div key={month}>
           <div onClick={()=>setOpenMonth(isOpen?null:month)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 6px",background:"var(--bg)",borderRadius:8,marginBottom:4,cursor:"pointer",borderRight:isOpen?"3px solid var(--pri)":"3px solid transparent"}}>
             <span style={{fontWeight:700,fontSize:".85rem"}}>{monthNames[month.slice(5)]||month.slice(5)} {month.slice(0,4)}</span>
             <span style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:".72rem",color:"var(--txt3)"}}>{items.length} מכירות</span><strong style={{color:"var(--suc)",fontSize:".85rem"}}>{fmt(mTotal)}</strong><span>{isOpen?"▲":"▼"}</span></span>
           </div>
-          {isOpen&&items.map(s=>{const c=gc(s.customerId);const tBV=calcSaleTotal(s,products);const tV=calcVat(tBV);const eff=effectiveSaleTotal(s,products);const hasDiscount=s.status==="שולם"&&+s.paid>0&&Math.abs(eff-tV)>1;
+          {isOpen&&items.map(s=>{const c=gc(s.customerId);const t=calcSaleTotal(s,products);
             return(<div className="row" key={s.id} onClick={()=>openEdit("sale",s)}>
               <div><div style={{fontWeight:600}}>{c?.name||"—"}</div>
                 <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{s.date}{s.docType&&s.docType!=="ללא"?` • ${s.docType}`:""}{s.invoiceNum?` • מס\'${s.invoiceNum}`:""}{s.payMethod&&s.payMethod!=="מזומן"?` • ${s.payMethod}`:""}{s.moneyDest&&s.moneyDest!=="אצלי"?` • ${s.moneyDest}`:""}{s.notes?` • ${s.notes.slice(0,18)}`:""}</div>
-                {s.status==="חלקי"&&<div style={{fontSize:".62rem",color:"var(--warn)"}}>💰 שולם {fmt(+s.paid)} | יתרה {fmt(tV-(+s.paid))}</div>}
-                {hasDiscount&&<div style={{fontSize:".62rem",color:"var(--inf)"}}>✓ נגבה בפועל {fmt(eff)} (מקורי {fmt(tV)})</div>}
+                {s.status==="חלקי"&&<div style={{fontSize:".62rem",color:"var(--warn)"}}>💰 שולם {fmt(+s.paid)} | יתרה {fmt(calcVat(calcSaleTotal(s,products))-(+s.paid))}</div>}
                 {(s.invoiceSent||s.receiptSent)&&<div style={{fontSize:".62rem",display:"flex",gap:2}}>{s.invoiceSent&&<span style={{color:"var(--suc)"}}>✓חשב</span>}{s.receiptSent&&<span style={{color:"var(--suc)"}}>✓קבלה</span>}</div>}</div>
-              <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(tV)}</div><div style={{fontSize:".62rem",color:"var(--txt3)"}}>{fmt(tBV)} לפני מע"מ</div>
+              <div style={{textAlign:"left"}}><div style={{fontWeight:700}}>{fmt(t)}</div>
                 <span className={`badge ${s.status==="שולם"?"b-s":s.status==="חלקי"?"b-w":"b-d"}`}>{s.status}</span></div>
             </div>)
           })}
@@ -690,7 +681,7 @@ function App(){
           <span style={{fontWeight:600}}>{item.cartons>0?`${item.cartons} קרטונים`:""}{item.cartons>0&&item.boxes>0?" + ":""}{item.boxes>0?`${item.boxes} קופסאות`:""}</span>
         </div>)}
         <div style={{borderTop:"1px solid var(--brd)",marginTop:4,paddingTop:4,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:".8rem"}}>
-          <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(calcVat(selSummary.total))} <span style={{fontSize:".7rem",color:"var(--txt3)",fontWeight:400}}>({fmt(selSummary.total)} לפני מע"מ)</span></span>
+          <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(selSummary.total)} | {fmt(calcVat(selSummary.total))} כולל מע"מ</span>
         </div>
         <div style={{display:"flex",gap:4,marginTop:8,flexWrap:"wrap"}}>
           <button className="btn btn-p btn-sm" onClick={copySelectedCargo}>📦 קטיף סחורה</button>
@@ -706,11 +697,11 @@ function App(){
           <span style={{fontWeight:600}}>{item.cartons>0?`${item.cartons} קרטונים`:""}{item.cartons>0&&item.boxes>0?" + ":""}{item.boxes>0?`${item.boxes} קופסאות`:""}</span>
         </div>)}
         <div style={{borderTop:"1px solid var(--brd)",marginTop:4,paddingTop:4,display:"flex",justifyContent:"space-between",fontWeight:700}}>
-          <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(calcVat(orderSummary.total))} <span style={{fontSize:".7rem",color:"var(--txt3)",fontWeight:400}}>({fmt(orderSummary.total)} לפני מע"מ)</span></span>
+          <span>סה"כ עלות</span><span style={{color:"var(--pri)"}}>{fmt(orderSummary.total)} | {fmt(calcVat(orderSummary.total))} כולל מע"מ</span>
         </div>
       </div>}
       
-      {sorted.map(o=>{const c=gc(o.customerId);const activeI=o.items.filter(i=>+i.qty>0);const tBV=activeI.reduce((s,i)=>s+calcItemTotal(i,products),0);const tV=calcVat(tBV);const isSel=selected.has(o.id);
+      {sorted.map(o=>{const c=gc(o.customerId);const activeI=o.items.filter(i=>+i.qty>0);const t=activeI.reduce((s,i)=>s+calcItemTotal(i,products),0);const isSel=selected.has(o.id);
         return(<div className="row" key={o.id} style={{borderColor:isSel?"var(--pri)":"var(--brd)",background:isSel?"rgba(37,99,235,.06)":"transparent"}}>
           <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
             <span style={{fontSize:"1.1rem",cursor:"pointer"}} onClick={(e)=>toggleSel(o.id,e)}>{isSel?"☑️":"⬜"}</span>
@@ -719,7 +710,7 @@ function App(){
               <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{o.date}{o.expectedDate?` • צפי: ${fmtD(o.expectedDate)}`:""}{c&&c.city&&c.city.trim()?` • ${c.city.trim()}`:""}</div>
             </div>
           </div>
-          <div style={{textAlign:"left"}} onClick={()=>openEdit("order",o)}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(tV)}</div><div style={{fontSize:".62rem",color:"var(--txt3)"}}>{fmt(tBV)} לפני מע"מ</div>
+          <div style={{textAlign:"left"}} onClick={()=>openEdit("order",o)}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(t)}</div>
             <span className={`badge ${sb(o.status)}`}>{o.status}</span></div>
         </div>)
       })}
@@ -730,129 +721,25 @@ function App(){
   // ======================== CUSTOMERS ========================
   const Customers=()=>{
     const[sr,setSr]=useState("");const[cityFl,setCityFl]=useState("all");const[distFl,setDistFl]=useState("all");
-    const[typeFl,setTypeFl]=useState("all"); // all/once/loyal/abandoned/none
-    const[sortBy,setSortBy]=useState("recent"); // recent/revenue/count/freq
-    const[minSales,setMinSales]=useState(""); // מינ' מכירות
-    const[minRev,setMinRev]=useState(""); // מינ' הכנסות
-    const[showFilters,setShowFilters]=useState(false);
     const cities=useMemo(()=>{const s=new Set();customers.forEach(c=>{if(c.city&&c.city.trim())s.add(c.city.trim())});return[...s].sort()},[customers]);
     const districts=useMemo(()=>{const s=new Set();customers.forEach(c=>{const d=getDistrict(c.city);if(d&&d!=="")s.add(d)});return[...s].sort()},[customers]);
-    
-    // חישוב מטריקות לכל לקוח
-    const customerStats=useMemo(()=>{
-      const today=new Date();
-      const m={};
-      customers.forEach(c=>{
-        const cS=sales.filter(s=>s.customerId===c.id).sort((a,b)=>a.date.localeCompare(b.date));
-        const count=cS.length;
-        const revenue=cS.reduce((sum,sl)=>sum+effectiveSaleTotal(sl,products),0);
-        const firstDate=count>0?cS[0].date:"";
-        const lastDate=count>0?cS[count-1].date:"";
-        const daysSinceLast=lastDate?Math.floor((today-new Date(lastDate))/(1000*60*60*24)):null;
-        let avgDays=null;
-        if(count>=2){
-          const span=Math.floor((new Date(lastDate)-new Date(firstDate))/(1000*60*60*24));
-          avgDays=Math.round(span/(count-1));
-        }
-        // נטוש = רק לקוח שסומן ידנית. אין הגדרה אוטומטית.
-        let type="none";
-        if(c.archived)type="abandoned";
-        else if(count===0)type="none";
-        else if(count===1)type="once";
-        else type="loyal";
-        m[c.id]={count,revenue,firstDate,lastDate,daysSinceLast,avgDays,type};
-      });
-      return m;
-    },[customers,sales,products]);
-    
-    // סיכומי סוגי לקוחות
-    const typeCounts=useMemo(()=>{
-      const r={loyal:0,once:0,abandoned:0,none:0};
-      Object.values(customerStats).forEach(s=>{if(r[s.type]!==undefined)r[s.type]++});
-      return r;
-    },[customerStats]);
-    
-    // ספירת לקוחות פעילים (לא נטושים) לתצוגה - נטוש = abandoned (ידני או אוטומטי)
-    const abandonedCount=typeCounts.abandoned;
-    const activeCustomersCount=customers.length-abandonedCount;
-    
     const filtered=useMemo(()=>{
       let r=customers;
       if(distFl!=="all")r=r.filter(c=>getDistrict(c.city)===distFl);
       if(cityFl!=="all")r=r.filter(c=>c.city&&c.city.trim()===cityFl);
-      if(typeFl!=="all")r=r.filter(c=>customerStats[c.id]?.type===typeFl);
-      if(minSales!=="")r=r.filter(c=>(customerStats[c.id]?.count||0)>=+minSales);
-      if(minRev!=="")r=r.filter(c=>(customerStats[c.id]?.revenue||0)>=+minRev);
       if(sr)r=r.filter(c=>c.name.includes(sr));
-      // מיון
-      r=[...r].sort((a,b)=>{
-        const sA=customerStats[a.id]||{};const sB=customerStats[b.id]||{};
-        if(sortBy==="revenue")return (sB.revenue||0)-(sA.revenue||0);
-        if(sortBy==="count")return (sB.count||0)-(sA.count||0);
-        if(sortBy==="freq"){
-          const fA=sA.avgDays!==null&&sA.avgDays!==undefined?sA.avgDays:99999;
-          const fB=sB.avgDays!==null&&sB.avgDays!==undefined?sB.avgDays:99999;
-          return fA-fB;
-        }
-        const aLast=sA.lastDate||(a.visits&&a.visits.length?a.visits[a.visits.length-1].date:"0000");
-        const bLast=sB.lastDate||(b.visits&&b.visits.length?b.visits[b.visits.length-1].date:"0000");
-        return bLast.localeCompare(aLast);
+      return [...r].sort((a,b)=>{
+        const aLast=a.visits&&a.visits.length?a.visits[a.visits.length-1].date:"0000";
+        const bLast=b.visits&&b.visits.length?b.visits[b.visits.length-1].date:"0000";
+        return aLast.localeCompare(bLast);
       });
-      return r;
-    },[customers,sr,cityFl,distFl,typeFl,minSales,minRev,sortBy,customerStats]);
-    
-    const typeBadge=(type)=>{
-      if(type==="loyal")return{label:"🟢 עקבי",color:"var(--suc)",bg:"rgba(34,197,94,.15)"};
-      if(type==="once")return{label:"🔴 חד-פעמי",color:"var(--dan)",bg:"rgba(239,68,68,.12)"};
-      if(type==="abandoned")return{label:"❌ נוטש",color:"var(--warn)",bg:"rgba(245,158,11,.15)"};
-      return{label:"⚪ לא קנה",color:"var(--txt3)",bg:"var(--bg)"};
-    };
-    
+    },[customers,sr,cityFl,distFl]);
     return(<div className="fi">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <h3 style={{fontWeight:700}}>👥 לקוחות ({activeCustomersCount}{abandonedCount>0?` + ${abandonedCount} נוטשים`:""})</h3>
+        <h3 style={{fontWeight:700}}>👥 לקוחות ({customers.length})</h3>
         <button className="btn btn-p btn-sm" onClick={()=>openNew("customer")}>+ לקוח</button>
       </div>
-      
-      {/* סיכום סוגי לקוחות */}
-      <div className="g2" style={{marginBottom:6,gap:4}}>
-        <div className="sc" style={{padding:"6px 4px",cursor:"pointer",borderColor:typeFl==="loyal"?"var(--suc)":"var(--brd)"}} onClick={()=>setTypeFl(typeFl==="loyal"?"all":"loyal")}>
-          <div className="l" style={{fontSize:".62rem"}}>🟢 עקביים</div><div className="v" style={{color:"var(--suc)",fontSize:"1rem"}}>{typeCounts.loyal}</div>
-        </div>
-        <div className="sc" style={{padding:"6px 4px",cursor:"pointer",borderColor:typeFl==="abandoned"?"var(--warn)":"var(--brd)"}} onClick={()=>setTypeFl(typeFl==="abandoned"?"all":"abandoned")}>
-          <div className="l" style={{fontSize:".62rem"}}>❌ נוטשים</div><div className="v" style={{color:"var(--warn)",fontSize:"1rem"}}>{typeCounts.abandoned}</div>
-        </div>
-      </div>
-      <div className="g2" style={{marginBottom:8,gap:4}}>
-        <div className="sc" style={{padding:"6px 4px",cursor:"pointer",borderColor:typeFl==="once"?"var(--dan)":"var(--brd)"}} onClick={()=>setTypeFl(typeFl==="once"?"all":"once")}>
-          <div className="l" style={{fontSize:".62rem"}}>🔴 חד-פעמיים</div><div className="v" style={{color:"var(--dan)",fontSize:"1rem"}}>{typeCounts.once}</div>
-        </div>
-        <div className="sc" style={{padding:"6px 4px",cursor:"pointer",borderColor:typeFl==="none"?"var(--txt3)":"var(--brd)"}} onClick={()=>setTypeFl(typeFl==="none"?"all":"none")}>
-          <div className="l" style={{fontSize:".62rem"}}>⚪ לא קנו</div><div className="v" style={{color:"var(--txt3)",fontSize:"1rem"}}>{typeCounts.none}</div>
-        </div>
-      </div>
-      
       <div className="sr"><input value={sr} onChange={e=>setSr(e.target.value)} placeholder="חיפוש לקוח..."/><span className="ic">🔍</span></div>
-      
-      {/* כפתור פתיחת סינונים מתקדמים */}
-      <div style={{marginBottom:6,display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
-        <button className={`btn btn-sm ${showFilters?"btn-p":"btn-o"}`} onClick={()=>setShowFilters(!showFilters)}>🔧 סינון מתקדם {showFilters?"▲":"▼"}</button>
-        <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{fontSize:".75rem",padding:"4px 6px",borderRadius:6,background:"var(--card)",color:"var(--txt)",border:"1px solid var(--brd)"}}>
-          <option value="recent">📅 לפי תאריך אחרון</option>
-          <option value="revenue">💰 לפי הכנסה</option>
-          <option value="count">🔢 לפי כמות מכירות</option>
-          <option value="freq">⚡ לפי תדירות</option>
-        </select>
-        {(typeFl!=="all"||minSales||minRev)&&<button className="btn btn-d btn-sm" onClick={()=>{setTypeFl("all");setMinSales("");setMinRev("")}}>נקה סינונים</button>}
-      </div>
-      
-      {showFilters&&<div className="card" style={{padding:6,marginBottom:6,background:"var(--bg)"}}>
-        <div className="g2" style={{gap:4}}>
-          <div className="fg"><label style={{fontSize:".7rem"}}>מינ' מכירות</label><input type="number" value={minSales} onChange={e=>setMinSales(e.target.value)} placeholder="לדוגמא: 3"/></div>
-          <div className="fg"><label style={{fontSize:".7rem"}}>מינ' הכנסה (₪)</label><input type="number" value={minRev} onChange={e=>setMinRev(e.target.value)} placeholder="לדוגמא: 5000"/></div>
-        </div>
-      </div>}
-      
       {districts.length>0&&<div style={{marginBottom:6,overflowX:"auto",whiteSpace:"nowrap",display:"flex",gap:4}}>
         <span style={{fontSize:".7rem",color:"var(--txt3)",padding:"4px 0"}}>מחוז:</span>
         <button className={`btn btn-sm ${distFl==="all"?"btn-p":"btn-o"}`} onClick={()=>setDistFl("all")}>הכל</button>
@@ -863,35 +750,20 @@ function App(){
         <button className={`btn btn-sm ${cityFl==="all"?"btn-p":"btn-o"}`} onClick={()=>setCityFl("all")}>הכל</button>
         {cities.map(c=><button key={c} className={`btn btn-sm ${cityFl===c?"btn-p":"btn-o"}`} onClick={()=>setCityFl(c)}>{c}</button>)}
       </div>}
-      
-      <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:4}}>מציג {filtered.length} מתוך {customers.length}</div>
-      
       {filtered.map(c=>{
-        const stats=customerStats[c.id]||{count:0,revenue:0,type:"none"};
-        const bd=typeBadge(stats.type);
-        return(<div className="row" key={c.id} style={{position:"relative",background:bd.bg,borderRight:`3px solid ${bd.color}`}}>
-          <div style={{flex:1,cursor:"pointer"}} onClick={()=>openEdit("customer",c)}>
-            <div style={{fontWeight:600,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              <span>{c.name}</span>
-              <span style={{fontSize:".62rem",fontWeight:700,color:bd.color}}>{bd.label}</span>
-            </div>
+        const cS=sales.filter(s=>s.customerId===c.id);
+        const total=cS.reduce((s,sl)=>s+calcVat(calcSaleTotal(sl,products)),0);
+        return(<div className="row" key={c.id} style={{position:"relative"}}>
+          <div style={{flex:1,cursor:"pointer"}} onClick={()=>openEdit("customer",c)}><div style={{fontWeight:600}}>{c.name}</div>
             <div style={{fontSize:".68rem",color:"var(--txt3)"}}>{c.paymentTerms}{c.city&&c.city.trim()?` • ${c.city.trim()}`:""}{getDistrict(c.city)?` • ${getDistrict(c.city)}`:""}</div>
-            {stats.count>0&&<div style={{fontSize:".65rem",color:"var(--txt2)"}}>
-              מכירה אחרונה: {fmtD(stats.lastDate)} ({stats.daysSinceLast} ימים)
-              {stats.avgDays!==null&&stats.count>=2&&<span> • כל {stats.avgDays} י' בממוצע</span>}
-            </div>}
-            {c.visits&&c.visits.length>0&&!stats.lastDate&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(c.visits[c.visits.length-1].date)}</div>}
+            {c.visits&&c.visits.length>0&&<div style={{fontSize:".65rem",color:"var(--inf)"}}>ביקור אחרון: {fmtD(c.visits[c.visits.length-1].date)}</div>}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <button onClick={(e)=>{e.stopPropagation();setPlannerPick({type:"customer",id:c.id,name:c.name,city:c.city?c.city.trim():""});setTab("weekplan")}} title="שבץ לתכנון שבועי" style={{background:"none",border:"none",fontSize:"1.1rem",cursor:"pointer",padding:"0 4px"}}>🗓️</button>
-            <div style={{textAlign:"left",cursor:"pointer"}} onClick={()=>openEdit("customer",c)}>
-              <div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(stats.revenue)}</div>
-              <div style={{fontSize:".65rem",color:"var(--txt3)"}}>{stats.count} {stats.count===1?"מכירה":"מכירות"}</div>
-            </div>
+            <div style={{textAlign:"left",cursor:"pointer"}} onClick={()=>openEdit("customer",c)}><div style={{fontWeight:700,fontSize:".83rem"}}>{fmt(total)}</div><div style={{fontSize:".65rem",color:"var(--txt3)"}}>{cS.length} עסקאות</div></div>
           </div>
         </div>)
       })}
-      {filtered.length===0&&<div className="emp">אין לקוחות התואמים סינון</div>}
     </div>);
   };
 
@@ -1194,24 +1066,10 @@ function App(){
           
           {/* Date selector */}
           <div style={{marginBottom:8}}>
-            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>יום בשבוע הנוכחי:</div>
+            <div style={{fontSize:".72rem",color:"var(--txt3)",marginBottom:3}}>יום בשבוע:</div>
             <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
               {days.map(d=><button key={d.date} className={`btn btn-sm ${addTargetDate===d.date?"btn-p":"btn-o"}`} onClick={()=>setAddTargetDate(d.date)}>{d.name.substring(0,1)} {d.dayNum}/{d.month}</button>)}
             </div>
-            <div style={{fontSize:".72rem",color:"var(--txt3)",marginTop:6,marginBottom:3}}>או בחר תאריך אחר:</div>
-            <input type="date" value={addTargetDate||""} onChange={e=>{
-              const newDate=e.target.value;
-              if(!newDate)return;
-              setAddTargetDate(newDate);
-              // אם התאריך מחוץ לשבוע הנוכחי - הזז את הצפייה לשבוע המתאים
-              const sel=new Date(newDate+"T00:00:00");
-              const cur=new Date(weekStart);
-              const diffDays=Math.floor((sel-cur)/(1000*60*60*24));
-              if(diffDays<0||diffDays>=7){
-                const weeksDiff=Math.floor(diffDays/7);
-                setWeekOffset(o=>o+weeksDiff);
-              }
-            }} style={{width:"100%",padding:"6px 8px",border:"1px solid var(--brd)",borderRadius:6,fontSize:".85rem",background:"var(--card)",color:"var(--txt)"}}/>
           </div>
           
           {/* Type selector */}
@@ -1272,7 +1130,7 @@ function App(){
 
     const allBiz=useMemo(()=>{
       const items=[];
-      customers.forEach(c=>{if(!c.archived)items.push({...c,type:"customer",icon:"👥",typeName:"לקוח"})});
+      customers.forEach(c=>items.push({...c,type:"customer",icon:"👥",typeName:"לקוח"}));
       leads.forEach(l=>items.push({...l,type:"lead",icon:"🎯",typeName:"ליד"}));
       return items;
     },[customers,leads]);
@@ -1462,7 +1320,7 @@ function App(){
     const[addDay,setAddDay]=useState(null);
     const[addSr,setAddSr]=useState("");
     const[addType,setAddType]=useState("visit");
-    const allBiz=[...customers.filter(c=>!c.archived).map(c=>({...c,bType:"customer",bIcon:"👥"})),...leads.map(l=>({...l,bType:"lead",bIcon:"🎯"}))].sort((a,b)=>a.name.localeCompare(b.name));
+    const allBiz=[...customers.map(c=>({...c,bType:"customer",bIcon:"👥"})),...leads.map(l=>({...l,bType:"lead",bIcon:"🎯"}))].sort((a,b)=>a.name.localeCompare(b.name));
     const addToPlan=(day,biz)=>{
       const hasOrder=orders.some(o=>o.customerId===biz.id&&o.status!=="סופק");
       setPlan(p=>{const d=p[day]||[];if(d.some(x=>x.id===biz.id&&x.bType===biz.bType))return p;return{...p,[day]:[...d,{id:biz.id,bType:biz.bType,name:biz.name,city:biz.city||"",bIcon:biz.bIcon,taskType:addType,status:"planned",hasOrder,note:""}]}});
@@ -1686,7 +1544,7 @@ function App(){
     const openOrders=orders.filter(o=>o.status!=="סופק");
     let txt=`📊 *דוח שבועי VNB*\n`;
     txt+=`${fmtD(ws)} - ${fmtD(today.toISOString().split("T")[0])}\n\n`;
-    txt+=`👥 *לקוחות:* ${customers.filter(c=>!c.archived).length} | חדשים השבוע: ${newCusts.length}\n`;
+    txt+=`👥 *לקוחות:* ${customers.length} | חדשים השבוע: ${newCusts.length}\n`;
     txt+=`🎯 *לידים:* ${leads.length}\n`;
     txt+=`💰 *מכירות השבוע:* ${weekSales.length} עסקאות\n`;
     txt+=`   סה"כ: ${fmt(weekTotal)} כולל מע"מ\n`;
@@ -1698,9 +1556,9 @@ function App(){
     return txt;
   };
   const Reports=()=>{
-    // Top customers - לפי סכום אפקטיבי (גביה בפועל)
+    // Top customers
     const topCust=useMemo(()=>{
-      const m={};sales.forEach(s=>{m[s.customerId]=(m[s.customerId]||0)+effectiveSaleTotal(s,products)});
+      const m={};sales.forEach(s=>{m[s.customerId]=(m[s.customerId]||0)+calcVat(calcSaleTotal(s,products))});
       return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([id,total])=>({customer:gc(+id),total}));
     },[sales,products]);
     // Top products
@@ -1768,7 +1626,7 @@ function App(){
       </div>}
       <div className="card" style={{marginTop:8}}>
         <div style={{fontWeight:600,marginBottom:4}}>📊 סטטיסטיקות</div>
-        <div className="g2" style={{fontSize:".8rem"}}><div>מוצרים: <strong>{products.length}</strong></div><div>לקוחות: <strong>{customers.filter(c=>!c.archived).length}</strong>{customers.filter(c=>c.archived).length>0&&<span style={{fontSize:".7rem",color:"var(--txt3)"}}> (+{customers.filter(c=>c.archived).length} נוטשים)</span>}</div><div>מכירות: <strong>{sales.length}</strong></div><div>הזמנות: <strong>{orders.length}</strong></div><div>לידים: <strong>{leads.length}</strong></div><div>הוצאות: <strong>{expenses.length}</strong></div></div>
+        <div className="g2" style={{fontSize:".8rem"}}><div>מוצרים: <strong>{products.length}</strong></div><div>לקוחות: <strong>{customers.length}</strong></div><div>מכירות: <strong>{sales.length}</strong></div><div>הזמנות: <strong>{orders.length}</strong></div><div>לידים: <strong>{leads.length}</strong></div><div>הוצאות: <strong>{expenses.length}</strong></div></div>
       </div>
       <button className="btn btn-d" style={{width:"100%",marginTop:8}} onClick={()=>{
         if(!confirm("למחוק הכל? גיבוי יישמר."))return;
@@ -1812,9 +1670,7 @@ function App(){
         <div className="fg"><label>מינימום מלאי</label><input type="number" value={f.minStock} onChange={e=>u("minStock",e.target.value)}/></div>
       </div>
       <div className="g2">
-        <div className="fg"><label>מחיר מכירה/קופ' (לפני מע"מ)</label><input type="number" step="0.5" value={f.pricePerBox} onChange={e=>u("pricePerBox",e.target.value)}/>
-          {+f.pricePerBox>0&&<div style={{fontSize:".68rem",color:"var(--pri)",marginTop:2,fontWeight:600}}>= {fmt(calcVat(+f.pricePerBox))} כולל מע"מ</div>}
-        </div>
+        <div className="fg"><label>מחיר מכירה/קופ'</label><input type="number" step="0.5" value={f.pricePerBox} onChange={e=>u("pricePerBox",e.target.value)}/></div>
         <div className="fg"><label>עלות/קופ'</label><input type="number" step="0.5" value={f.costPerBox} onChange={e=>u("costPerBox",e.target.value)}/></div>
       </div>
       <div className="g2">
@@ -1891,20 +1747,16 @@ function App(){
           <div className="fg"><label>כמות</label><input type="number" value={item.qty} onChange={e=>ui(i,"qty",+e.target.value)}/></div>
           <div className="fg"><label>מחיר/קופ'</label><input type="number" step="0.5" value={item.price} onChange={e=>ui(i,"price",+e.target.value)}/></div>
         </div>
-        <div style={{fontSize:".72rem",color:"var(--txt2)"}}>סכום: <strong style={{color:"var(--pri)"}}>{fmt(calcVat(calcItemTotal(item,products)))}</strong> <span style={{color:"var(--txt3)"}}>({fmt(calcItemTotal(item,products))} לפני מע"מ)</span></div>
+        <div style={{fontSize:".72rem",color:"var(--txt2)"}}>סכום: {fmt(calcItemTotal(item,products))}</div>
         {f.items.length>1&&<button className="btn btn-d btn-sm" style={{marginTop:2}} onClick={()=>u("items",f.items.filter((_,j)=>j!==i))}>הסר</button>}
       </div>)}
       <button className="btn btn-o btn-sm" style={{width:"100%",marginBottom:6}} onClick={()=>u("items",[...f.items,{productId:products[0]?.id||1,qty:1,unitType:"carton",price:products[0]?.pricePerBox||13}])}>+ פריט</button>
       <div className="card" style={{padding:8,background:"var(--bg)",marginBottom:6,textAlign:"center"}}>
-        <strong style={{fontSize:"1.1rem",color:"var(--pri)"}}>{fmt(calcVat(total))}</strong> <span style={{fontSize:".75rem",color:"var(--txt3)"}}>כולל מע"מ</span>
-        <div style={{fontSize:".7rem",color:"var(--txt3)"}}>לפני מע"מ: {fmt(total)}</div>
+        <strong>{fmt(total)}</strong> <span style={{color:"var(--pri)",fontSize:".8rem"}}>כולל מע"מ: {fmt(calcVat(total))}</span>
         {+f.paid>0&&+f.paid<calcVat(total)&&<div style={{fontSize:".72rem",color:"var(--warn)",marginTop:2}}>💰 תשלום חלקי: שולם {fmt(+f.paid)} | יתרה {fmt(calcVat(total)-(+f.paid))}</div>}
-        {f.status==="שולם"&&+f.paid>0&&Math.abs(+f.paid-calcVat(total))>1&&<div style={{fontSize:".72rem",color:"var(--inf)",marginTop:2}}>✓ נגבה בפועל {fmt(+f.paid)} (הפרש מהמקורי)</div>}
       </div>
       <div className="g3">
-        <div className="fg"><label>שולם</label><input type="number" value={f.paid} onChange={e=>{const v=+e.target.value;u("paid",v);if(v<=0)u("status","ממתין");else if(v>=calcVat(total))u("status","שולם");else u("status","חלקי")}}/>
-          {f.status==="שולם"&&(!+f.paid||+f.paid===0)&&total>0&&<button className="btn btn-o btn-sm" style={{marginTop:3,fontSize:".68rem",padding:"2px 6px"}} onClick={()=>u("paid",calcVat(total))} type="button">📌 מלא {fmt(calcVat(total))}</button>}
-        </div>
+        <div className="fg"><label>שולם</label><input type="number" value={f.paid} onChange={e=>{const v=+e.target.value;u("paid",v);if(v<=0)u("status","ממתין");else if(v>=calcVat(total))u("status","שולם");else u("status","חלקי")}}/></div>
         <div className="fg"><label>סטטוס</label><select value={f.status} onChange={e=>u("status",e.target.value)}><option>ממתין</option><option>חלקי</option><option>שולם</option></select></div>
         <div className="fg"><label>מסמך</label><select value={f.docType||"ללא"} onChange={e=>u("docType",e.target.value)}>{DOC_TYPES.map(d=><option key={d}>{d}</option>)}</select></div>
       </div>
@@ -2038,11 +1890,10 @@ function App(){
           <div className="fg"><label>כמות</label><input type="number" value={item.qty} onChange={e=>ui(i,"qty",+e.target.value)} style={{borderColor:+item.qty>0?"var(--pri)":"var(--brd)"}}/></div>
           <div className="fg"><label>מחיר/קופ'</label><input type="number" step="0.5" value={item.price} onChange={e=>ui(i,"price",+e.target.value)}/></div>
         </div>
-        {+item.qty>0&&<div style={{fontSize:".72rem",color:"var(--pri)",fontWeight:600}}>סכום: <strong>{fmt(calcVat(calcItemTotal(item,products)))}</strong> כולל מע"מ <span style={{color:"var(--txt3)",fontWeight:400}}>({fmt(calcItemTotal(item,products))} לפני)</span></div>}
+        {+item.qty>0&&<div style={{fontSize:".72rem",color:"var(--pri)",fontWeight:600}}>סכום: {fmt(calcItemTotal(item,products))} | כולל מע"מ: {fmt(calcVat(calcItemTotal(item,products)))}</div>}
       </div>)})}
       {total>0&&<div className="card" style={{padding:8,background:"var(--bg)",marginBottom:6,textAlign:"center"}}>
-        <strong style={{fontSize:"1.1rem",color:"var(--pri)"}}>{fmt(calcVat(total))}</strong> <span style={{fontSize:".75rem",color:"var(--txt3)"}}>כולל מע"מ</span>
-        <div style={{fontSize:".7rem",color:"var(--txt3)"}}>לפני מע"מ: {fmt(total)}</div>
+        <strong style={{fontSize:"1.05rem"}}>{fmt(total)}</strong> <span style={{color:"var(--pri)",fontSize:".85rem"}}>כולל מע"מ: {fmt(calcVat(total))}</span>
       </div>}
       <div className="g2">
         <div className="fg"><label>סטטוס</label><select value={f.status} onChange={e=>u("status",e.target.value)}>{ORDER_STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
@@ -2081,10 +1932,6 @@ function App(){
     };
     return(<div className="mo" onClick={()=>setModal(null)}><div className="md" onClick={e=>e.stopPropagation()}>
       <h3>{isE?"עריכת לקוח":"לקוח חדש"}<button onClick={()=>setModal(null)}>✕</button></h3>
-      {isE&&f.archived&&<div style={{background:"rgba(245,158,11,.15)",padding:8,borderRadius:8,marginBottom:8,fontSize:".78rem",border:"1px solid var(--warn)"}}>
-        <strong style={{color:"var(--warn)"}}>❌ לקוח נוטש</strong>{f.archivedDate?` • סומן ב-${fmtD(f.archivedDate)}`:""}<br/>
-        <span style={{fontSize:".7rem",color:"var(--txt3)"}}>לא נספר בסה"כ לקוחות. לחץ "♻️ החזר ללקוחות" לשחזור.</span>
-      </div>}
       <div className="fg"><label>שם</label><input value={f.name} onChange={e=>u("name",e.target.value)}/></div>
       <div className="g2">
         <div className="fg"><label>טלפון</label><input value={f.phone} onChange={e=>u("phone",e.target.value)}/></div>
@@ -2135,28 +1982,11 @@ function App(){
           </div>)}
         </details>}
       </div>}
-      {isE&&<><div style={{display:"flex",gap:5,marginBottom:5}}>
-        <button className="btn btn-p" style={{flex:1}} onClick={save}>עדכן</button>
-        {f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
-        <button className="btn btn-d btn-sm" onClick={del}>🗑️</button>
-      </div>
       <div style={{display:"flex",gap:5}}>
-        {!f.archived&&<button className="btn btn-o btn-sm" style={{flex:1}} onClick={()=>{
-          if(!confirm("לסמן את "+f.name+" כנוטש?\nהלקוח לא ייספר בסך הלקוחות והנתונים יישמרו.\nאפשר להחזיר אותו בכל עת."))return;
-          const updated={...f,archived:true,archivedDate:new Date().toISOString().split("T")[0]};
-          setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
-          setModal(null);
-        }}>❌ סמן כנוטש</button>}
-        {f.archived&&<button className="btn btn-s" style={{flex:1}} onClick={()=>{
-          if(!confirm("להחזיר את "+f.name+" ללקוחות פעילים?"))return;
-          const updated={...f};delete updated.archived;delete updated.archivedDate;
-          setCustomers(p=>p.map(c=>c.id===editItem.id?updated:c));
-          setModal(null);
-        }}>♻️ החזר ללקוחות פעילים</button>}
-      </div></>}
-      {!isE&&<div style={{display:"flex",gap:5}}>
-        <button className="btn btn-p" style={{flex:1}} onClick={save}>הוסף</button>
-      </div>}
+        <button className="btn btn-p" style={{flex:1}} onClick={save}>{isE?"עדכן":"הוסף"}</button>
+        {isE&&f.phone&&<button className="btn btn-w btn-sm" onClick={()=>sendWhatsApp(f.phone,`שלום ${f.name}, כאן VNB`)}>📱</button>}
+        {isE&&<button className="btn btn-d btn-sm" onClick={del}>🗑️</button>}
+      </div>
     </div></div>);
   };
 
@@ -2260,7 +2090,7 @@ function App(){
       display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",
       background:"var(--bg)",color:"var(--txt)",
-      gap:20,zIndex:9999,padding:20
+      gap:20,zIndex:9999
     }}>
       <div style={{
         width:60,height:60,
@@ -2271,12 +2101,6 @@ function App(){
       }}/>
       <div style={{fontSize:"1.1rem",fontWeight:600,color:"var(--pri)"}}>VNB</div>
       <div style={{fontSize:".9rem",color:"var(--txt2)"}}>☁️ טוען נתונים מהענן...</div>
-      <button onClick={()=>setFbLoaded(true)} style={{marginTop:20,padding:"10px 20px",background:"var(--card)",color:"var(--txt2)",border:"1px solid var(--brd)",borderRadius:8,cursor:"pointer",fontSize:".85rem"}}>
-        ⏭️ המשך עם נתונים מקומיים
-      </button>
-      <div style={{fontSize:".7rem",color:"var(--txt3)",textAlign:"center",maxWidth:280}}>
-        אם הטעינה תקועה - לחץ על הכפתור או חכה 6 שניות
-      </div>
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>);
   }
