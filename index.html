@@ -121,34 +121,11 @@ const DO=[{"_cn": "חמאיסה חומרי בניין בעיר", "customerId": 5
 
 // STORAGE & HELPERS
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
-
-// Keys that hold critical record arrays - protected from accidental shrinking
-const PROTECTED_KEYS=["customers","sales","leads","orders","expenses","products","inventory"];
-
 function sv(k,v){
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
   if(fbDB){
     const fbKey=k.replace(/^vnb\d+_/,"");
-    // Protection: for critical arrays, verify we're not overwriting MORE data with LESS
-    if(PROTECTED_KEYS.includes(fbKey)&&Array.isArray(v)){
-      fbDB.ref("vnb/"+fbKey).once("value").then(snap=>{
-        const remote=snap.val();
-        const remoteLen=Array.isArray(remote)?remote.length:0;
-        const localLen=v.length;
-        // If remote has significantly MORE records than what we're about to write, DON'T overwrite
-        // (this means another device saved newer data, or our state hasn't loaded yet)
-        if(remoteLen>localLen+2){
-          console.log(`🛡️ Blocked overwrite of ${fbKey}: remote=${remoteLen} > local=${localLen}. Skipping save to prevent data loss.`);
-          return;
-        }
-        fbDB.ref("vnb/"+fbKey).set(v).catch(e=>console.log("FB save err:",e));
-      }).catch(e=>{
-        // If check fails, save anyway (offline fallback)
-        fbDB.ref("vnb/"+fbKey).set(v).catch(e=>console.log("FB save err:",e));
-      });
-    } else {
-      try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){console.log("FB save err:",e)}
-    }
+    try{fbDB.ref("vnb/"+fbKey).set(v)}catch(e){console.log("FB save err:",e)}
   }
 }
 const fmt=n=>`₪${(n||0).toLocaleString("he-IL",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
