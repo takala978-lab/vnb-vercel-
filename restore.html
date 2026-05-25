@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VNB - שחזור גיבוי</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#1a1a1a;color:#fff;padding:20px;min-height:100vh}
+h1{font-size:20px;text-align:center;color:#ffc107;margin-bottom:6px}
+.sub{text-align:center;color:#aaa;font-size:13px;margin-bottom:20px}
+.card{background:#2a2a2a;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid #444}
+.step-title{font-weight:bold;color:#ffc107;margin-bottom:10px;font-size:15px}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;font-size:15px}
+.row:last-child{border-bottom:none}
+.val{font-weight:bold;color:#4caf50}
+button{width:100%;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
+.btn-file{background:#2196f3;color:#fff}
+.btn-go{background:#4caf50;color:#fff}
+.btn-go:disabled{background:#555;color:#999}
+.status{margin-top:14px;padding:12px;border-radius:8px;text-align:center;font-size:14px;line-height:1.5}
+.status.ok{background:#1b5e20;color:#c8e6c9}
+.status.err{background:#b71c1c;color:#ffcdd2}
+.status.info{background:#0d47a1;color:#bbdefb}
+.fb-status{font-size:13px;text-align:center;padding:8px;border-radius:6px;margin-bottom:14px}
+.fb-ok{background:#1b5e20;color:#c8e6c9}
+.fb-bad{background:#b71c1c;color:#ffcdd2}
+input[type=file]{display:none}
+.warn{background:#7c2d12;color:#fed7aa;padding:12px;border-radius:8px;font-size:13px;line-height:1.5;margin-bottom:14px}
+</style>
+</head>
+<body>
+<h1>🔄 שחזור גיבוי VNB</h1>
+<p class="sub">מעלה את הנתונים מקובץ הגיבוי חזרה ל-Firebase</p>
+
+<div id="fbStatus" class="fb-status">בודק חיבור ל-Firebase...</div>
+
+<div class="warn">
+⚠️ הכלי יחליף את הנתונים ב-Firebase בנתונים מקובץ הגיבוי.<br>
+לפני שתלחץ "שחזר" - תראה כמה רשומות יש בכל אחד.
+</div>
+
+<div class="card">
+  <div class="step-title">📁 שלב 1: בחר את קובץ הגיבוי</div>
+  <button class="btn-file" onclick="document.getElementById('fileInput').click()">בחר קובץ (vnb-backup...json)</button>
+  <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
+  <div id="fileInfo" style="margin-top:10px;font-size:13px;color:#aaa"></div>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+  <div class="step-title">📊 שלב 2: מה יישחזר</div>
+  <div id="preview"></div>
+</div>
+
+<div class="card" id="compareCard" style="display:none">
+  <div class="step-title">🔍 השוואה: Firebase כעת מול הגיבוי</div>
+  <div id="compare"></div>
+</div>
+
+<button class="btn-go" id="restoreBtn" style="display:none" onclick="restore()">✅ שחזר את הנתונים ל-Firebase</button>
+
+<div id="status"></div>
+
+<script>
+const fbConfig={
+  apiKey:"AIzaSyCG9v9CtOIaV_v9sKFLYKR8SgqILSESrbI",
+  authDomain:"vnbat10.firebaseapp.com",
+  databaseURL:"https://vnbat10-default-rtdb.firebaseio.com",
+  projectId:"vnbat10",
+  storageBucket:"vnbat10.firebasestorage.app",
+  messagingSenderId:"349304414603",
+  appId:"1:349304414603:web:f35eaee0f1a2147db14f8e"
+};
+
+let fbDB=null;
+let backupData=null;
+
+const labels={products:"מוצרים",inventory:"מלאי",customers:"לקוחות",sales:"מכירות",leads:"לידים",expenses:"הוצאות",orders:"הזמנות",tasks:"משימות",clusters:"אשכולות",weekPlan:"תכנון שבועי"};
+
+window.addEventListener("load",()=>{
+  try{
+    firebase.initializeApp(fbConfig);
+    fbDB=firebase.database();
+    document.getElementById("fbStatus").className="fb-status fb-ok";
+    document.getElementById("fbStatus").innerHTML="✅ מחובר ל-Firebase (vnbat10)";
+  }catch(e){
+    document.getElementById("fbStatus").className="fb-status fb-bad";
+    document.getElementById("fbStatus").innerHTML="❌ שגיאת חיבור: "+e.message;
+  }
+});
+
+function loadFile(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  document.getElementById("fileInfo").textContent="קובץ: "+file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      backupData=JSON.parse(e.target.result);
+      showPreview();
+    }catch(err){
+      alert("❌ הקובץ אינו תקין: "+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showPreview(){
+  let html="";
+  Object.keys(labels).forEach(k=>{
+    if(backupData[k]!==undefined){
+      const v=backupData[k];
+      const count=Array.isArray(v)?v.length:(v&&typeof v==="object"?Object.keys(v).length:0);
+      html+=`<div class="row"><span>${labels[k]}:</span><span class="val">${count}</span></div>`;
+    }
+  });
+  document.getElementById("preview").innerHTML=html;
+  document.getElementById("previewCard").style.display="block";
+  
+  // Compare with current Firebase
+  if(fbDB){
+    fbDB.ref("vnb").once("value").then(snap=>{
+      const cur=snap.val()||{};
+      let chtml="";
+      Object.keys(labels).forEach(k=>{
+        if(backupData[k]!==undefined){
+          const bv=backupData[k];
+          const bCount=Array.isArray(bv)?bv.length:0;
+          const cv=cur[k];
+          const cCount=Array.isArray(cv)?cv.length:0;
+          const arrow=bCount>cCount?"⬆️":bCount<cCount?"⬇️":"=";
+          const color=bCount>cCount?"#4caf50":bCount<cCount?"#ff9800":"#aaa";
+          chtml+=`<div class="row"><span>${labels[k]}:</span><span style="color:${color}">עכשיו ${cCount} → גיבוי ${bCount} ${arrow}</span></div>`;
+        }
+      });
+      document.getElementById("compare").innerHTML=chtml;
+      document.getElementById("compareCard").style.display="block";
+    });
+  }
+  
+  document.getElementById("restoreBtn").style.display="block";
+}
+
+function restore(){
+  if(!backupData||!fbDB){alert("חסר קובץ או חיבור");return}
+  const cust=Array.isArray(backupData.customers)?backupData.customers.length:0;
+  if(!confirm(`לשחזר ${cust} לקוחות ואת כל שאר הנתונים ל-Firebase?\n\nזה יחליף את הנתונים הנוכחיים.`))return;
+  
+  const btn=document.getElementById("restoreBtn");
+  btn.disabled=true;
+  btn.textContent="⏳ משחזר...";
+  document.getElementById("status").innerHTML='<div class="status info">מעלה נתונים ל-Firebase...</div>';
+  
+  // Build clean object with only the data keys
+  const toRestore={};
+  Object.keys(labels).forEach(k=>{
+    if(backupData[k]!==undefined)toRestore[k]=backupData[k];
+  });
+  
+  fbDB.ref("vnb").update(toRestore).then(()=>{
+    btn.textContent="✅ שוחזר בהצלחה!";
+    btn.style.background="#2e7d32";
+    document.getElementById("status").innerHTML=`<div class="status ok">
+      ✅ <b>השחזור הושלם!</b><br><br>
+      הנתונים הועלו ל-Firebase.<br>
+      עכשיו פתח את האפליקציה הרגילה - תראה את כל הנתונים.<br><br>
+      <b>חשוב:</b> סגור את האפליקציה לגמרי ופתח מחדש כדי לראות את הנתונים המעודכנים.
+    </div>`;
+  }).catch(e=>{
+    btn.disabled=false;
+    btn.textContent="📤 נסה שוב";
+    document.getElementById("status").innerHTML='<div class="status err">❌ שגיאה: '+e.message+'</div>';
+  });
+}
+</script>
+</body>
+</html>
